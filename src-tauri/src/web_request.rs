@@ -66,3 +66,6 @@ fn extract_archive(archive_path: &str, output_path: &str) -> Result<(), Box<dyn 
         .output()?;
     Ok(())
 }
+
+
+//TODO add func to fetch LOCUS DB for house and roads

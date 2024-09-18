@@ -108,8 +108,17 @@ lazy_static! {
     .iter()
     .map(|&(code, name)| (code.to_string(), name.to_string()))
     .collect();
+    pub static ref Vulcain_Colors: Vec<(u8, u8, u8)> = [
+        (0, 0, 0),
+        (4, 25, 30),
+        (25, 50, 60),
+        (50, 200, 80),
+        (80, 200, 120),
+    ]
+    .to_vec();
+    pub static ref Parasite_Colors: Vec<(u8, u8, u8)> =
+        [(255, 255, 255), (128, 128, 128), (14, 14, 14)].to_vec();
 }
-
 
 pub fn get_departement_name(code: &str) -> Option<String> {
     DEPARTEMENTS.get(code).map(|name| name.to_string())
@@ -128,4 +137,3 @@ pub fn get_departement_code(name: &str) -> Option<String> {
 pub fn get_departements_names() -> Vec<String> {
     DEPARTEMENTS.values().cloned().collect()
 }
-
