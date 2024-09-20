@@ -1,13 +1,11 @@
+use crate::utils::{create_directory_if_not_exists, extract_archive};
 use reqwest;
 use scraper::{Html, Selector};
 use std::error::Error;
 use std::fs;
-use std::path::Path;
-use std::process::Command;
 
 #[tokio::main]
-pub async fn get_departement_shp_file(code: &str) -> Result<String, Box<dyn Error>> {
-    let url = "https://geoservices.ign.fr/bdforet#telechargementv2";
+pub async fn get_departement_geofile(code: &str, url: &str) -> Result<String, Box<dyn Error>> {
     let body = reqwest::get(url).await?.text().await?;
 
     let document = Html::parse_document(&body);
@@ -35,37 +33,19 @@ pub async fn get_departement_shp_file(code: &str) -> Result<String, Box<dyn Erro
     Ok(shp_files[0].clone())
 }
 
-
 pub async fn download_and_extract_shp_file(url: &str, code: &str) -> Result<(), Box<dyn Error>> {
     let body = reqwest::get(url).await?.bytes().await?;
     let resources_path = "resources";
-    let archive_path = format!("{}/data_{}.7z", resources_path, code);
+    let name = match url {
+        url if url.contains("BDTOPO") => "BDTOPO",
+        url if url.contains("BDFORET") => "BDFORET",
+        _ => "unknown",
+    };
+    let archive_path = format!("{}/{}_{}.7z", resources_path, name, code);
 
     create_directory_if_not_exists(resources_path)?;
     fs::write(&archive_path, &body)?;
-    extract_archive(&archive_path, resources_path)?;
-    fs::remove_file(&archive_path)?;
+    extract_archive(&archive_path)?;
 
     Ok(())
 }
-
-fn create_directory_if_not_exists(path: &str) -> Result<(), Box<dyn Error>> {
-    if !Path::new(path).exists() {
-        fs::create_dir(path)?;
-    }
-    Ok(())
-}
-
-
-//TODO : fix this function
-fn extract_archive(archive_path: &str, output_path: &str) -> Result<(), Box<dyn Error>> {
-    Command::new("7z")
-        .arg("x")
-        .arg(archive_path)
-        .arg(format!("-o{}", output_path))
-        .output()?;
-    Ok(())
-}
-
-
-//TODO add func to fetch LOCUS DB for house and roads

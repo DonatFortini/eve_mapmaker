@@ -1,6 +1,9 @@
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use std::error::Error;
 use std::fs;
+use std::path::Path;
+use std::process::Command;
 
 lazy_static! {
     pub static ref DEPARTEMENTS: HashMap<String, String> = [
@@ -139,6 +142,7 @@ pub fn get_departements_names() -> Vec<String> {
     DEPARTEMENTS.values().cloned().collect()
 }
 
+//TODO : verify the windows command
 pub fn compress_folder_for_release(folder_path: &str, release_name: &str, destination_path: &str) {
     let release_path = format!("{}/{}", destination_path, release_name);
     fs::create_dir_all(&release_path).unwrap();
@@ -171,3 +175,31 @@ pub fn compress_folder_for_release(folder_path: &str, release_name: &str, destin
         .expect("failed to compress folder");
 }
 
+pub fn create_directory_if_not_exists(path: &str) -> Result<(), Box<dyn Error>> {
+    if !Path::new(path).exists() {
+        fs::create_dir(path)?;
+    }
+    Ok(())
+}
+
+//TODO : verify the windows command
+// adapt the func for 7z and zip
+pub fn extract_archive(archive_path: &str) -> Result<(), Box<dyn Error>> {
+    #[cfg(target_os = "windows")]
+    let _ = Command::new("powershell")
+        .arg("-Command")
+        .arg(format!(
+            "Expand-Archive -Path {} -DestinationPath {}",
+            archive_path, "resources"
+        ))
+        .output()
+        .expect("failed to extract archive");
+    #[cfg(not(target_os = "windows"))]
+    let _ = Command::new("unzip")
+        .arg(archive_path)
+        .output()
+        .expect("failed to extract archive");
+
+    let _ = fs::remove_file(archive_path)?;
+    Ok(())
+}
