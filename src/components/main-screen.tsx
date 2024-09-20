@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/ui/avatar"
 import { MapPin, Layers, ZoomIn, ZoomOut, RotateCw, Download, Share2, Settings, ChevronLeft, ChevronRight } from "lucide-react"
 
 export default function Component() {

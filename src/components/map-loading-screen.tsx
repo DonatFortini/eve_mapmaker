@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Map, Loader2 } from 'lucide-react'
 import { Progress } from "@/components/ui/progress"
+import {  } from "";
 
 export default function Component() {
   const [progress, setProgress] = useState(0)

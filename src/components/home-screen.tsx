@@ -1,8 +1,8 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MapPin, Plus, History, Download, Share2, Settings } from "lucide-react"
+import { useState } from 'react'
 
 export default function HomeScreen() {
   const recentMaps = [
@@ -15,30 +15,29 @@ export default function HomeScreen() {
   ]
 
   return (
-    <div className="flex h-screen bg-[#2D2D30] text-[#CCCCCC]">
-      {/* Left sidebar */}
-      <div className="w-64 bg-[#252526] p-4 flex flex-col">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-semibold">MapMaster</h1>
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="User" />
-            <AvatarFallback>JD</AvatarFallback>
-          </Avatar>
+    <div className="flex h-screen w-screen bg-[#2D2D30] text-[#CCCCCC]">
+      <div className="bg-[#252526] p-4 flex flex-col w-64 transition-all duration-300 ease-in-out">
+        <div className="mb-8">
+          <h1 className="text-2xl font-semibold">MapMaker</h1>
         </div>
-        <Button 
-          variant="ghost" 
-          className="justify-start text-left mb-2 hover:bg-[#3E3E42] hover:text-white"
-        >
-          <MapPin className="mr-2 h-4 w-4" />
-          Load Previous Map
-        </Button>
-        <Button 
-          variant="ghost" 
-          className="justify-start text-left mb-2 hover:bg-[#3E3E42] hover:text-white"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Generate New Map
-        </Button>
+
+        <div className="flex flex-col">
+          <Button 
+            variant="ghost" 
+            className="justify-start text-left mb-2 hover:bg-[#3E3E42] hover:text-white"
+          >
+            <MapPin className="mr-2 h-4 w-4" />
+            Load Previous Map
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="justify-start text-left mb-2 hover:bg-[#3E3E42] hover:text-white"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Generate New Map
+          </Button>
+        </div>
+          
         <div className="mt-auto">
           <h2 className="text-sm font-semibold mb-2">Quick Access</h2>
           <div className="grid grid-cols-2 gap-2">
@@ -60,10 +59,11 @@ export default function HomeScreen() {
             </Button>
           </div>
         </div>
+        
       </div>
 
-      {/* Main content area */}
-      <div className="flex-1 p-8 overflow-auto">
+      
+      <div className="flex flex-col p-8 overflow-auto">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-semibold mb-4">Recent Maps</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -80,6 +80,7 @@ export default function HomeScreen() {
           </div>
         </div>
       </div>
+
     </div>
   )
 }
