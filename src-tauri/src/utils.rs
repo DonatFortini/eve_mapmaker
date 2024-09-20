@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use std::collections::HashMap;
+use std::fs;
 
 lazy_static! {
     pub static ref DEPARTEMENTS: HashMap<String, String> = [
@@ -137,3 +138,36 @@ pub fn get_departement_code(name: &str) -> Option<String> {
 pub fn get_departements_names() -> Vec<String> {
     DEPARTEMENTS.values().cloned().collect()
 }
+
+pub fn compress_folder_for_release(folder_path: &str, release_name: &str, destination_path: &str) {
+    let release_path = format!("{}/{}", destination_path, release_name);
+    fs::create_dir_all(&release_path).unwrap();
+    let files = fs::read_dir(folder_path).unwrap();
+    for file in files {
+        let file = file.unwrap();
+        let file_path = file.path();
+        let file_name = file.file_name();
+        let file_name = file_name.to_str().unwrap();
+        let new_file_path = format!("{}/{}", release_path, file_name);
+        fs::copy(file_path, new_file_path).unwrap();
+    }
+    let zip_file = format!("{}/{}.zip", destination_path, release_name);
+    #[cfg(target_os = "windows")]
+    let _ = std::process::Command::new("powershell")
+        .arg("-Command")
+        .arg(format!(
+            "Compress-Archive -Path {} -DestinationPath {}",
+            release_path, zip_file
+        ))
+        .output()
+        .expect("failed to compress folder");
+
+    #[cfg(not(target_os = "windows"))]
+    let _ = std::process::Command::new("zip")
+        .arg("-r")
+        .arg(&zip_file)
+        .arg(&release_path)
+        .output()
+        .expect("failed to compress folder");
+}
+

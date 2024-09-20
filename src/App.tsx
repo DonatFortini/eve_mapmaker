@@ -1,14 +1,12 @@
 import { invoke } from "@tauri-apps/api/tauri";
 import "./App.css";
+import  HomeScreen from "./components/home-screen";
 
 function App() {
   
   return (
     <div className="App">
-      <header className="App-header">
-        <button onClick={() => invoke("greet").then(console.log)}>New Map</button>
-        <button onClick={() => invoke("greet").then(console.log)}>Open Map Folder</button>
-      </header>
+      <HomeScreen />
     </div>
   );
 }
