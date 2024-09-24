@@ -5,7 +5,7 @@ import { Map, Loader2 } from 'lucide-react'
 import { Progress } from "@/components/ui/progress"
 import {  } from "";
 
-export default function Component() {
+export default function LoaderScreen() {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {

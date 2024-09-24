@@ -4,14 +4,16 @@ import { Button } from "@/components/ui/button"
 import { MapPin, Plus, History, Download, Share2, Settings } from "lucide-react"
 import { useState } from 'react'
 
-export default function HomeScreen() {
+interface HomeScreenProps {
+  onNewProject: () => void;
+  onMainScreen: () => void;
+}
+
+
+export default function HomeScreen({ onNewProject, onMainScreen }: HomeScreenProps) {
   const recentMaps = [
     { id: 1, name: "City Center Map" },
-    { id: 2, name: "National Park Trails" },
-    { id: 3, name: "Downtown Restaurant Guide" },
-    { id: 4, name: "Subway Network" },
-    { id: 5, name: "Historical Landmarks" },
-    { id: 6, name: "Bike Paths" },
+    { id: 2, name: "National Park Trails" }
   ]
 
   return (
@@ -25,6 +27,7 @@ export default function HomeScreen() {
           <Button 
             variant="ghost" 
             className="justify-start text-left mb-2 hover:bg-[#3E3E42] hover:text-white"
+            onClick={onMainScreen}
           >
             <MapPin className="mr-2 h-4 w-4" />
             Load Previous Map
@@ -32,6 +35,7 @@ export default function HomeScreen() {
           <Button 
             variant="ghost" 
             className="justify-start text-left mb-2 hover:bg-[#3E3E42] hover:text-white"
+            onClick={onNewProject}
           >
             <Plus className="mr-2 h-4 w-4" />
             Generate New Map
