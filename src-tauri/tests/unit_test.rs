@@ -128,7 +128,7 @@ mod tests {
     fn test_qgis_api_create_blank_project_success() {
         // for test purpose, we need to prepare the python environment
         pyo3::prepare_freethreaded_python();
-        let result = qgis_api_wrapper::create_blank_project("resources/test.qgs");
+        let result = qgis_api_wrapper::create_blank_project("test");
         assert!(result.is_ok());
     }
 
