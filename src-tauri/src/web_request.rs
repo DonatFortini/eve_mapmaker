@@ -1,51 +1,75 @@
-use crate::utils::{create_directory_if_not_exists, extract_archive};
+use futures_util::StreamExt;
 use reqwest;
 use scraper::{Html, Selector};
-use std::error::Error;
-use std::fs;
+use std::{error::Error, fs, path::Path};
+use tokio::{fs::File, io::AsyncWriteExt};
 
 #[tokio::main]
-pub async fn get_departement_geofile(code: &str, url: &str) -> Result<String, Box<dyn Error>> {
-    let body = reqwest::get(url).await?.text().await?;
 
+/// Gets the URL of a SHP file from the IGN Database.
+///
+/// # Parameters
+/// - `code`: A string slice that holds the department code.
+/// - `url`: A string slice that holds the URL to a specific page of the IGN database.
+///
+/// # Returns
+/// - A string slice representing the URL of the SHP file archive that corespond to the departement.
+pub async fn get_departement_shp_file_url(code: &str, url: &str) -> Result<String, Box<dyn Error>> {
+    let body = reqwest::get(url).await?.text().await?;
     let document = Html::parse_document(&body);
     let selector = Selector::parse("a")?;
 
-    let mut shp_files: Vec<String> = document
+    let mut shp_files: Vec<_> = document
         .select(&selector)
         .filter_map(|element| element.value().attr("href"))
         .filter(|href| href.contains(&format!("D0{}", code)))
-        .map(|href| href.to_string())
         .collect();
 
     if shp_files.is_empty() {
-        return Ok("No file found".to_string());
+        return Err("No file found".into());
     }
 
-    if shp_files.len() > 1 {
-        shp_files.sort_by(|a, b| {
-            let date_a = a.split('_').last().unwrap().split('.').next().unwrap();
-            let date_b = b.split('_').last().unwrap().split('.').next().unwrap();
-            date_b.cmp(date_a)
-        });
-    }
+    shp_files.sort_by(|a, b| {
+        let date_a = a.split('_').last().unwrap().split('.').next().unwrap();
+        let date_b = b.split('_').last().unwrap().split('.').next().unwrap();
+        date_b.cmp(date_a)
+    });
 
-    Ok(shp_files[0].clone())
+    Ok(shp_files[0].to_string())
 }
 
-pub async fn download_and_extract_shp_file(url: &str, code: &str) -> Result<(), Box<dyn Error>> {
-    let body = reqwest::get(url).await?.bytes().await?;
-    let resources_path = "resources";
+/// Downloads a SHP file from a given URL from the IGN Database.
+///
+/// - If the URL contains "BDTOPO", the name will be "BDTOPO".
+/// - If the URL contains "BDFORET", the name will be "BDFORET".
+/// - Otherwise, the name will be "unknown".
+///
+/// # Parameters
+/// - `url`: A string slice that holds the URL to be checked.
+/// - `code`: A string slice that holds the department code.
+///
+/// # Returns
+/// - A string slice representing the determined name.
+pub async fn download_shp_file(url: &str, code: &str) -> Result<(), Box<dyn Error>> {
     let name = match url {
         url if url.contains("BDTOPO") => "BDTOPO",
         url if url.contains("BDFORET") => "BDFORET",
         _ => "unknown",
     };
-    let archive_path = format!("{}/{}_{}.7z", resources_path, name, code);
+    let tmp_folder_path = "tmp";
+    let archive_path = format!("{}/{}_{}.7z", tmp_folder_path, name, code);
 
-    create_directory_if_not_exists(resources_path)?;
-    fs::write(&archive_path, &body)?;
-    extract_archive(&archive_path)?;
+    if Path::new(&archive_path).exists() {
+        fs::remove_file(&archive_path)?;
+    }
+
+    let mut file = File::create(archive_path).await?;
+    let mut stream = reqwest::get(url).await?.bytes_stream();
+    while let Some(chunk_result) = stream.next().await {
+        let chunk = chunk_result?;
+        file.write_all(&chunk).await?;
+    }
+    file.flush().await?;
 
     Ok(())
 }

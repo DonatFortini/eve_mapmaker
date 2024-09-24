@@ -142,64 +142,61 @@ pub fn get_departements_names() -> Vec<String> {
     DEPARTEMENTS.values().cloned().collect()
 }
 
-//TODO : verify the windows command
-pub fn compress_folder_for_release(folder_path: &str, release_name: &str, destination_path: &str) {
-    let release_path = format!("{}/{}", destination_path, release_name);
-    fs::create_dir_all(&release_path).unwrap();
-    let files = fs::read_dir(folder_path).unwrap();
-    for file in files {
-        let file = file.unwrap();
-        let file_path = file.path();
-        let file_name = file.file_name();
-        let file_name = file_name.to_str().unwrap();
-        let new_file_path = format!("{}/{}", release_path, file_name);
-        fs::copy(file_path, new_file_path).unwrap();
-    }
-    let zip_file = format!("{}/{}.zip", destination_path, release_name);
-    #[cfg(target_os = "windows")]
-    let _ = std::process::Command::new("powershell")
-        .arg("-Command")
-        .arg(format!(
-            "Compress-Archive -Path {} -DestinationPath {}",
-            release_path, zip_file
-        ))
-        .output()
-        .expect("failed to compress folder");
-
-    #[cfg(not(target_os = "windows"))]
-    let _ = std::process::Command::new("zip")
-        .arg("-r")
-        .arg(&zip_file)
-        .arg(&release_path)
-        .output()
-        .expect("failed to compress folder");
-}
+//////----------------file management-----------------//////
 
 pub fn create_directory_if_not_exists(path: &str) -> Result<(), Box<dyn Error>> {
     if !Path::new(path).exists() {
-        fs::create_dir(path)?;
+        fs::create_dir_all(path)?;
     }
     Ok(())
 }
 
-//TODO : verify the windows command
-// adapt the func for 7z and zip
-pub fn extract_archive(archive_path: &str) -> Result<(), Box<dyn Error>> {
-    #[cfg(target_os = "windows")]
-    let _ = Command::new("powershell")
-        .arg("-Command")
-        .arg(format!(
-            "Expand-Archive -Path {} -DestinationPath {}",
-            archive_path, "resources"
-        ))
-        .output()
-        .expect("failed to extract archive");
-    #[cfg(not(target_os = "windows"))]
-    let _ = Command::new("unzip")
-        .arg(archive_path)
-        .output()
-        .expect("failed to extract archive");
+pub fn compress_folder(
+    folder_directory_path: &str,
+    folder_name: &str,
+    destination_directory_path: Option<&str>,
+) -> Result<(), Box<dyn Error>> {
+    let mut command = Command::new("7z");
+    command.arg("a");
 
-    let _ = fs::remove_file(archive_path)?;
+    let archive_path = format!("{}.zip", folder_name);
+
+    command.arg(archive_path);
+    command.current_dir(
+        if let Some(destination_directory_path) = destination_directory_path {
+            destination_directory_path
+        } else {
+            folder_directory_path
+        },
+    );
+    command.arg(folder_name);
+    let output = command.output()?;
+    if !output.status.success() {
+        return Err(format!("Failed to execute command: {:?}", output).into());
+    }
+
+    Ok(())
+}
+
+pub fn extract_archive(
+    archive_path: &str,
+    destination_directory_path: Option<&str>,
+) -> Result<(), Box<dyn Error>> {
+    let mut command = Command::new("7z");
+    command.arg("x");
+
+    if let Some(destination_directory_path) = destination_directory_path {
+        command.arg(format!("-o{}", destination_directory_path));
+    } else {
+        let parent_dir = std::path::Path::new(archive_path).parent().unwrap();
+        command.arg(format!("-o{}", parent_dir.to_str().unwrap()));
+    }
+
+    command.arg(archive_path);
+    let output = command.output()?;
+    if !output.status.success() {
+        return Err(format!("Failed to execute command: {:?}", output).into());
+    }
+
     Ok(())
 }

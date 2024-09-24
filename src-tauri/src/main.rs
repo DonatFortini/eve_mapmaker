@@ -12,8 +12,6 @@ fn main() {
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+    // required to run python in a multi-threaded environment
+    pyo3::prepare_freethreaded_python();
 }
-
-
-
-
