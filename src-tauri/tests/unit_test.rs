@@ -50,6 +50,33 @@ mod tests {
         assert!(std::path::Path::new("tmp/data_2A").exists());
     }
 
+    #[test]
+    fn test_extract_specific_file_success(){
+        let archive_path = "tmp/BDFORET_2A.7z";
+        let file_name = "FORMATION_VEGETALE.shp";
+        let output_dir = "resources/QGIS/test";
+        let _ = utils::extract_specific_file(archive_path, file_name, output_dir);
+        assert!(std::path::Path::new("resources/QGIS/test/FORMATION_VEGETALE.shp").exists());
+    }
+
+    #[test]
+    fn test_extract_specific_folder_success(){
+        let archive_path = "tmp/BDFORET_2A.7z";
+        let folder = utils::find_filepath_in_archive(archive_path, "FORMATION_VEGETALE.shp").unwrap().unwrap();
+        let output_dir = "resources/QGIS/test";
+        let _ = utils::extract_specific_folder(archive_path, &folder, output_dir);
+        
+    }
+
+    #[test]
+    fn test_find_file_in_archive_success() {
+        let archive_path = "tmp/BDFORET_2A.7z";
+        let file_name = "FORMATION_VEGETALE.shp";
+        let result = utils::find_filepath_in_archive(archive_path, file_name);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().unwrap(), "BDFORET_2-0__SHP_LAMB93_D02A_2017-05-10/BDFORET/1_DONNEES_LIVRAISON/BDF_2-0_SHP_LAMB93_D02A/");
+    }
+
     // test IGN
 
     #[test]
@@ -101,7 +128,7 @@ mod tests {
         let url = "https://data.geopf.fr/telechargement/download/BDFORET/BDFORET_2-0__SHP_LAMB93_D02A_2017-05-10/BDFORET_2-0__SHP_LAMB93_D02A_2017-05-10.7z";
         match web_request::download_shp_file(url, "2A").await {
             Ok(_) => {
-                assert!(std::path::Path::new("resources/BDFORET_2A.7z").exists());
+                assert!(std::path::Path::new("tmp/BDFORET_2A.7z").exists());
             }
             Err(e) => {
                 panic!("Download failed: {:?}", e);
@@ -114,13 +141,15 @@ mod tests {
         let url = "https://data.geopf.fr/telechargement/download/BDTOPO/BDTOPO_3-4_TOUSTHEMES_SHP_LAMB93_D02A_2024-06-15/BDTOPO_3-4_TOUSTHEMES_SHP_LAMB93_D02A_2024-06-15.7z";
         match web_request::download_shp_file(url, "2A").await {
             Ok(_) => {
-                assert!(std::path::Path::new("resources/BDTOPO_2A.7z").exists());
+                assert!(std::path::Path::new("tmp/BDTOPO_2A.7z").exists());
             }
             Err(e) => {
                 panic!("Download failed: {:?}", e);
             }
         }
     }
+
+    
 
     // test qgis api wrapper
 
@@ -137,8 +166,8 @@ mod tests {
         // for test purpose, we need to prepare the python environment
         pyo3::prepare_freethreaded_python();
         let result = qgis_api_wrapper::load_vector_layer_to_project(
-            "resources/test.qgs",
-            "resources/BDFORET_2A/BDFORET_2A.shp",
+            "resources/QGIS/test/test.qgz",
+            "resources/QGIS/test/FORMATION_VEGETALE.shp",
             "BDFORET_2A",
         );
         assert!(result.is_ok());

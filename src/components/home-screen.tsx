@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { MapPin, Plus, History, Download, Share2, Settings } from "lucide-react"
+import { MapPin, Plus, History, Download, Book, Settings } from "lucide-react"
 import { useState } from 'react'
 
 interface HomeScreenProps {
@@ -30,7 +30,7 @@ export default function HomeScreen({ onNewProject, onMainScreen }: HomeScreenPro
             onClick={onMainScreen}
           >
             <MapPin className="mr-2 h-4 w-4" />
-            Load Previous Map
+            Charger un projet
           </Button>
           <Button 
             variant="ghost" 
@@ -38,7 +38,7 @@ export default function HomeScreen({ onNewProject, onMainScreen }: HomeScreenPro
             onClick={onNewProject}
           >
             <Plus className="mr-2 h-4 w-4" />
-            Generate New Map
+            Générer un nouveau projet
           </Button>
         </div>
           
@@ -46,20 +46,12 @@ export default function HomeScreen({ onNewProject, onMainScreen }: HomeScreenPro
           <h2 className="text-sm font-semibold mb-2">Quick Access</h2>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="ghost" size="sm" className="justify-start">
-              <History className="mr-2 h-4 w-4" />
-              History
-            </Button>
-            <Button variant="ghost" size="sm" className="justify-start">
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
-            <Button variant="ghost" size="sm" className="justify-start">
-              <Share2 className="mr-2 h-4 w-4" />
-              Share
+              <Book className="mr-2 h-4 w-4" />
+              Docs
             </Button>
             <Button variant="ghost" size="sm" className="justify-start">
               <Settings className="mr-2 h-4 w-4" />
-              Settings
+              Paramètres
             </Button>
           </div>
         </div>
@@ -69,7 +61,7 @@ export default function HomeScreen({ onNewProject, onMainScreen }: HomeScreenPro
       
       <div className="flex flex-col p-8 overflow-auto">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-xl font-semibold mb-4">Recent Maps</h2>
+          <h2 className="text-xl font-semibold mb-4">Projet Récents</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {recentMaps.map((map) => (
               <Button

@@ -1,31 +1,25 @@
 "use client"
-
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { Folder, ChevronRight, Building2, ArrowLeft } from 'lucide-react'
+import { invoke } from '@tauri-apps/api/tauri'
 
 interface NewProjectScreenProps {
     onGoBack: () => void;
 }
 
-const departments = [
-  { value: "engineering", label: "Engineering" },
-  { value: "marketing", label: "Marketing" },
-  { value: "sales", label: "Sales" },
-  { value: "finance", label: "Finance" },
-  { value: "hr", label: "Human Resources" },
-]
+const departments =await invoke('get_dpts_list').then((res) => res);
+
 
 export default function NewProjectScreen({ onGoBack }: NewProjectScreenProps) {
   const [projectName, setProjectName] = useState("")
   const [department, setDepartment] = useState("")
 
-  const handleSubmit = () => {
-    console.log("Project Name:", projectName)
-    console.log("Department:", department)
+  const handleSubmit = async () => {
+    await invoke('create_project', { code:departement,name: projectName })
   }
 
   return (
@@ -35,17 +29,17 @@ export default function NewProjectScreen({ onGoBack }: NewProjectScreenProps) {
       </Button>
       <Card className="w-full max-w-md bg-[#252526] border-none shadow-xl">
         <CardContent className="p-8">
-          <h1 className="text-2xl font-bold text-blue-400 mb-10">Create New Project</h1>
+          <h1 className="text-2xl font-bold text-blue-400 mb-10">Nouveau Projet</h1>
           <div className="space-y-10">
             <div className="space-y-2">
-              <label htmlFor="project-name" className="block text-sm font-medium text-gray-400">Project Name</label>
+              <label htmlFor="project-name" className="block text-sm font-medium text-gray-400">Nom du projet</label>
               <div className="relative">
                 <Folder className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400" size={20} />
                 <Input
                   id="project-name"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="Enter project name"
+                  placeholder="nom du projet"
                   className="pl-10 bg-[#3E3E42] border-[#3E3E42] text-white rounded-full h-12"
                 />
               </div>
@@ -56,15 +50,15 @@ export default function NewProjectScreen({ onGoBack }: NewProjectScreenProps) {
                 <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400" size={20} />
                 <Select value={department} onValueChange={setDepartment}>
                   <SelectTrigger id="department" className="pl-10 bg-[#3E3E42] border-[#3E3E42] text-white rounded-full h-12">
-                    <SelectValue placeholder="Select a department" />
+                    <SelectValue placeholder="Selectionez votre département" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#3E3E42] border-[#3E3E42] text-white">
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.value} value={dept.value}>
-                        {dept.label}
+                    <SelectContent className="bg-[#3E3E42] border-[#3E3E42] text-white">
+                    {Object.entries(departments).map(([key, value]) => (
+                      <SelectItem key={key} value={key}>
+                      {value}
                       </SelectItem>
                     ))}
-                  </SelectContent>
+                    </SelectContent>
                 </Select>
               </div>
             </div>
@@ -73,7 +67,7 @@ export default function NewProjectScreen({ onGoBack }: NewProjectScreenProps) {
               className="w-full bg-blue-600 hover:bg-blue-700 rounded-full h-12 mt-6"
               disabled={!projectName || !department}
             >
-              Create Project
+              Démarrer
               <ChevronRight className="ml-2" size={20} />
             </Button>
           </div>

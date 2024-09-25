@@ -12,8 +12,6 @@ function App() {
 
   const renderScreen = () => {
     switch (currentScreen) {
-      case "home":
-        return <HomeScreen onNewProject={() => setCurrentScreen("newProject")} onMainScreen={() => setCurrentScreen("main")} />;
       case "newProject":
         return <NewProjectScreen onGoBack={() => setCurrentScreen("home")} />;
       case "main":

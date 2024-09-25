@@ -15,7 +15,7 @@ export default function MainScreen() {
 
   return (
     <div className="flex h-screen bg-[#2D2D30] text-[#CCCCCC]">
-      {/* Left side action column */}
+      
       <div className={`bg-[#252526] flex flex-col transition-all duration-300 ease-in-out ${isCollapsed ? 'w-16' : 'w-64'}`}>
         <div className="p-4 flex items-center justify-between">
           <h2 className={`text-xl font-semibold ${isCollapsed ? 'hidden' : 'block'}`}>Map Controls</h2>

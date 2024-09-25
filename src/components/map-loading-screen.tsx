@@ -1,40 +1,91 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Map, Loader2 } from 'lucide-react'
-import { Progress } from "@/components/ui/progress"
-import {  } from "";
+import { useState, useEffect } from "react";
+import { Map, Loader2, CheckCircle2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { invoke } from "@tauri-apps/api/tauri"; 
+import { listen } from "@tauri-apps/api/event"; 
 
-export default function LoaderScreen() {
-  const [progress, setProgress] = useState(0)
+const steps = [
+  "Initializing",
+  "Loading Map Data",
+  "Downloading Files",
+  "Preparing Layers",
+  "Finalizing"
+];
+
+export default function LoaderScreen({ code, name }) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prevProgress) => {
-        if (prevProgress >= 100) {
-          clearInterval(timer)
-          return 100
-        }
-        return prevProgress + 10
-      })
-    }, 500)
+    const processMapCreation = async () => {
+      try {
+        setCurrentStep(0);
+        await invoke("process_map_creation", { code, name });
+      } catch (err) {
+        console.error("Error processing map creation", err);
+        setError(err.message);
+      }
+    };
 
-    return () => clearInterval(timer)
-  }, [])
+    const unlisten = listen("progress-update", (event) => {
+      const step = event.payload as string;
+      const stepIndex = steps.indexOf(step);
+
+      if (stepIndex !== -1) {
+        setCurrentStep(stepIndex);
+      }
+    });
+
+    
+    processMapCreation();
+
+   
+    return () => {
+      unlisten.then((unsub) => unsub());
+    };
+  }, [code, name]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-100 to-blue-200 p-4">
-      <div className="text-center space-y-4">
-        <Map className="w-16 h-16 text-blue-500 mx-auto animate-pulse" />
-        <h1 className="text-2xl font-bold text-blue-800">Loading Your Maps</h1>
-        <p className="text-blue-600">Please wait while we prepare your personalized map experience.</p>
-        <div className="flex items-center justify-center space-x-2">
-          <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-          <span className="text-sm text-blue-700">Loading data...</span>
-        </div>
-        <Progress value={progress} className="w-64 mx-auto" />
-        <p className="text-sm text-blue-600">{progress}% complete</p>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#2D2D30] text-[#CCCCCC] p-4">
+      <Card className="w-full max-w-md bg-[#252526] border-none shadow-xl">
+        <CardContent className="p-6">
+          <div className="text-center space-y-4">
+            <Map className="w-16 h-16 text-blue-400 mx-auto animate-pulse" />
+            <h1 className="text-2xl font-bold text-blue-400">Loading Your Maps</h1>
+            {error ? (
+              <p className="text-red-500">{error}</p>
+            ) : (
+              <p className="text-gray-400">
+                Please wait while we prepare your personalized map experience.
+              </p>
+            )}
+            <div className="flex items-center justify-center space-x-2">
+              {error ? null : <Loader2 className="w-4 h-4 animate-spin text-blue-400" />}
+              <span className="text-sm text-gray-400">
+                {error ? "Failed to load data." : "Loading data..."}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {steps.map((step, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  {index < currentStep ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  ) : index === currentStep ? (
+                    <div className="w-5 h-5 rounded-full bg-blue-500 animate-pulse" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-gray-600" />
+                  )}
+                  <span className={index <= currentStep ? "text-blue-400" : "text-gray-600"}>
+                    {step}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 }

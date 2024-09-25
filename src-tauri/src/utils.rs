@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
@@ -124,6 +125,10 @@ lazy_static! {
         [(255, 255, 255), (128, 128, 128), (14, 14, 14)].to_vec();
 }
 
+pub fn get_departement_list() -> HashMap<String, String> {
+    DEPARTEMENTS.clone()
+}
+
 pub fn get_departement_name(code: &str) -> Option<String> {
     DEPARTEMENTS.get(code).map(|name| name.to_string())
 }
@@ -200,3 +205,79 @@ pub fn extract_archive(
 
     Ok(())
 }
+
+pub fn find_filepath_in_archive(archive_path: &str, file_name: &str) -> Result<Option<String>, Box<dyn Error>> {
+    let output = Command::new("7z")
+        .args(&["l", archive_path])
+        .output()?;
+
+    if output.status.success() {
+        let output_str = String::from_utf8_lossy(&output.stdout);
+        for line in output_str.lines() {
+            if line.contains(file_name) {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if let Some(path) = parts.last() {
+                    let path_str = path.to_string();
+                    if let Some(pos) = path_str.rfind(file_name) {
+                        return Ok(Some(path_str[..pos].to_string()));
+                    }
+                }
+            }
+        }
+        Ok(None)
+    } else {
+        Err(format!("Failed to execute command: {:?}", output).into())
+    }
+}
+
+pub fn extract_specific_file(
+    archive_path: &str,
+    file_name: &str,
+    output_dir: &str,
+) -> Result<(), Box<dyn Error>> {
+    create_directory_if_not_exists(output_dir)?;
+    let output_path = Path::new(output_dir).join(file_name);
+
+    let output = Command::new("7z")
+        .args(&["e", archive_path, "-r", file_name])
+        .arg(format!("-o{}", output_dir))
+        .output()?;
+
+    if output.status.success() {
+        println!("File extracted to: {}", output_path.display());
+    } else {
+        println!("Failed to extract the file.");
+        println!("7z stdout: {}", String::from_utf8_lossy(&output.stdout));
+        println!("7z stderr: {}", String::from_utf8_lossy(&output.stderr));
+    }
+
+    Ok(())
+}
+
+pub fn extract_specific_folder(
+    archive_path: &str,
+    folder_name: &str,
+    output_dir: &str,
+) -> Result<(), Box<dyn Error>> {
+    create_directory_if_not_exists(output_dir)?;
+    let output_path = Path::new(output_dir).join(folder_name);
+
+    let output = Command::new("7z")
+        .args(&["e", archive_path, "-r", folder_name])
+        .arg(format!("-o{}", output_path.display()))
+        .output()?;
+
+    if output.status.success() {
+        println!("Folder extracted to: {}", output_path.display());
+    } else {
+        println!("Failed to extract the folder.");
+        println!("7z stdout: {}", String::from_utf8_lossy(&output.stdout));
+        println!("7z stderr: {}", String::from_utf8_lossy(&output.stderr));
+    }
+
+    Ok(())
+}
+
+
+
+
