@@ -176,11 +176,42 @@ mod tests {
     }
 
     #[test]
-    fn test_edit_veg_layer_success() {
+    fn test_setup_veg_layer_success() {
         pyo3::prepare_freethreaded_python();
-        let result = qgis_api_wrapper::edit_veg_layer("resources/QGIS/test/test.qgz", "BDFORET_2A");
+        let result =
+            qgis_api_wrapper::setup_basic_veg_layer("resources/QGIS/test/test.qgz", "BDFORET_2A");
         assert!(result.is_ok(), "Error: {:?}", result.err());
     }
 
-    
+    #[test]
+    fn test_get_layer_fields_success() {
+        pyo3::prepare_freethreaded_python();
+        let result = qgis_api_wrapper::get_layer_fields_by_category(
+            "resources/QGIS/test/test.qgz",
+            "BDFORET_2A",
+            "ESSENCE",
+        );
+        match result {
+            Ok(fields) => {
+                println!("{:?}", fields);
+                assert!(true);
+            }
+            Err(e) => {
+                assert!(false, "Error: {:?}", e);
+            }
+        }
+    }
+
+    #[test]
+    fn test_edit_layer_field_success() {
+        pyo3::prepare_freethreaded_python();
+        let result = qgis_api_wrapper::edit_layer_field_color(
+            "resources/QGIS/test/test.qgz",
+            "BDFORET_2A",
+            "ESSENCE",
+            "Feuillus",
+            "blue",
+        );
+        assert!(result.is_ok(), "Error: {:?}", result.err());
+    }
 }
