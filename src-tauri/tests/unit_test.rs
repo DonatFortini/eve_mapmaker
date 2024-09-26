@@ -24,7 +24,7 @@ mod tests {
     fn test_compression_successfull() {
         let directory_path = "resources";
         let folder_name = "data_2A";
-        utils::compress_folder(&directory_path, &folder_name,None).unwrap();
+        utils::compress_folder(&directory_path, &folder_name, None).unwrap();
         assert!(std::path::Path::new("resources/data_2A.zip").exists());
     }
 
@@ -32,7 +32,7 @@ mod tests {
     fn test_compression_successfull_into_tmp() {
         let directory_path = "resources";
         let folder_name = "data_2A";
-        utils::compress_folder(&directory_path, &folder_name,Some("tmp")).unwrap();
+        utils::compress_folder(&directory_path, &folder_name, Some("tmp")).unwrap();
         assert!(std::path::Path::new("tmp/data_2A.zip").exists());
     }
 
@@ -51,7 +51,7 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_specific_file_success(){
+    fn test_extract_specific_file_success() {
         let archive_path = "tmp/BDFORET_2A.7z";
         let file_name = "FORMATION_VEGETALE.shp";
         let output_dir = "resources/QGIS/test";
@@ -60,13 +60,17 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_specific_folder_success(){
+    fn test_extract_specific_folder_success() {
         let archive_path = "tmp/BDFORET_2A.7z";
-        let folder = utils::find_filepath_in_archive(archive_path, "FORMATION_VEGETALE.shp").unwrap().unwrap();
+        let folder = utils::find_filepath_in_archive(archive_path, "FORMATION_VEGETALE.shp")
+            .unwrap()
+            .unwrap();
         let output_dir = "resources/QGIS/test";
-        let _ = utils::extract_specific_folder(archive_path, &folder, output_dir,Some("Vegetation"));
-        assert!(std::path::Path::new("resources/QGIS/test/Vegetation/FORMATION_VEGETALE.shp").exists());
-        
+        let _ =
+            utils::extract_specific_folder(archive_path, &folder, output_dir, Some("Vegetation"));
+        assert!(
+            std::path::Path::new("resources/QGIS/test/Vegetation/FORMATION_VEGETALE.shp").exists()
+        );
     }
 
     #[test]
@@ -150,16 +154,13 @@ mod tests {
         }
     }
 
-    
-
     // test qgis api wrapper
-
     #[test]
     fn test_qgis_api_create_blank_project_success() {
         // for test purpose, we need to prepare the python environment
         pyo3::prepare_freethreaded_python();
         let result = qgis_api_wrapper::create_blank_project("test");
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Error: {:?}", result.err());
     }
 
     #[test]
@@ -168,9 +169,18 @@ mod tests {
         pyo3::prepare_freethreaded_python();
         let result = qgis_api_wrapper::load_vector_layer_to_project(
             "resources/QGIS/test/test.qgz",
-            "resources/QGIS/test/FORMATION_VEGETALE.shp",
+            "resources/QGIS/test/Vegetation/FORMATION_VEGETALE.shp",
             "BDFORET_2A",
         );
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Error: {:?}", result.err());
     }
+
+    #[test]
+    fn test_edit_veg_layer_success() {
+        pyo3::prepare_freethreaded_python();
+        let result = qgis_api_wrapper::edit_veg_layer("resources/QGIS/test/test.qgz", "BDFORET_2A");
+        assert!(result.is_ok(), "Error: {:?}", result.err());
+    }
+
+    
 }
