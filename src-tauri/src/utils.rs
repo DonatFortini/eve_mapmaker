@@ -206,10 +206,11 @@ pub fn extract_archive(
     Ok(())
 }
 
-pub fn find_filepath_in_archive(archive_path: &str, file_name: &str) -> Result<Option<String>, Box<dyn Error>> {
-    let output = Command::new("7z")
-        .args(&["l", archive_path])
-        .output()?;
+pub fn find_filepath_in_archive(
+    archive_path: &str,
+    file_name: &str,
+) -> Result<Option<String>, Box<dyn Error>> {
+    let output = Command::new("7z").args(&["l", archive_path]).output()?;
 
     if output.status.success() {
         let output_str = String::from_utf8_lossy(&output.stdout);
@@ -236,19 +237,33 @@ pub fn extract_specific_file(
     output_dir: &str,
 ) -> Result<(), Box<dyn Error>> {
     create_directory_if_not_exists(output_dir)?;
-    let output_path = Path::new(output_dir).join(file_name);
 
-    let output = Command::new("7z")
+    Command::new("7z")
         .args(&["e", archive_path, "-r", file_name])
         .arg(format!("-o{}", output_dir))
         .output()?;
 
-    if output.status.success() {
-        println!("File extracted to: {}", output_path.display());
-    } else {
-        println!("Failed to extract the file.");
-        println!("7z stdout: {}", String::from_utf8_lossy(&output.stdout));
-        println!("7z stderr: {}", String::from_utf8_lossy(&output.stderr));
+    Ok(())
+}
+
+fn move_folder_contents(src_dir: &Path, dst_dir: &Path) -> Result<(), Box<dyn Error>> {
+    if !src_dir.exists() {
+        return Err(format!("Source directory does not exist: {}", src_dir.display()).into());
+    }
+
+    for entry in fs::read_dir(src_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        let dest_path = dst_dir.join(entry.file_name());
+
+        if path.is_dir() {
+            fs::create_dir_all(&dest_path)?;
+            move_folder_contents(&path, &dest_path)?;
+            fs::remove_dir_all(&path)?;
+        } else {
+            fs::copy(&path, &dest_path)?;
+            fs::remove_file(&path)?;
+        }
     }
 
     Ok(())
@@ -258,26 +273,27 @@ pub fn extract_specific_folder(
     archive_path: &str,
     folder_name: &str,
     output_dir: &str,
+    extracted_name: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
     create_directory_if_not_exists(output_dir)?;
-    let output_path = Path::new(output_dir).join(folder_name);
-
-    let output = Command::new("7z")
-        .args(&["e", archive_path, "-r", folder_name])
-        .arg(format!("-o{}", output_path.display()))
+    let temp_extract_dir = Path::new(output_dir).join("temp_extract");
+    create_directory_if_not_exists(temp_extract_dir.to_str().unwrap())?;
+    Command::new("7z")
+        .args(&["x", archive_path])
+        .arg(format!("-o{}", temp_extract_dir.to_str().unwrap()))
         .output()?;
 
-    if output.status.success() {
-        println!("Folder extracted to: {}", output_path.display());
+    let extracted_folder_path = temp_extract_dir.join(folder_name);
+    let destination = if let Some(extracted_name) = extracted_name {
+        create_directory_if_not_exists(
+            Path::new(output_dir).join(extracted_name).to_str().unwrap(),
+        )?;
+        Path::new(output_dir).join(extracted_name)
     } else {
-        println!("Failed to extract the folder.");
-        println!("7z stdout: {}", String::from_utf8_lossy(&output.stdout));
-        println!("7z stderr: {}", String::from_utf8_lossy(&output.stderr));
-    }
-
+        create_directory_if_not_exists(Path::new(output_dir).join("extracted").to_str().unwrap())?;
+        Path::new(output_dir).join("extracted")
+    };
+    move_folder_contents(&extracted_folder_path, &destination)?;
+    fs::remove_dir_all(temp_extract_dir)?;
     Ok(())
 }
-
-
-
-

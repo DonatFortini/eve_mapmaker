@@ -64,7 +64,8 @@ mod tests {
         let archive_path = "tmp/BDFORET_2A.7z";
         let folder = utils::find_filepath_in_archive(archive_path, "FORMATION_VEGETALE.shp").unwrap().unwrap();
         let output_dir = "resources/QGIS/test";
-        let _ = utils::extract_specific_folder(archive_path, &folder, output_dir);
+        let _ = utils::extract_specific_folder(archive_path, &folder, output_dir,Some("Vegetation"));
+        assert!(std::path::Path::new("resources/QGIS/test/Vegetation/FORMATION_VEGETALE.shp").exists());
         
     }
 
