@@ -274,6 +274,7 @@ pub fn extract_specific_folder(
     folder_name: &str,
     output_dir: &str,
     extracted_name: Option<&str>,
+    filter: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
     create_directory_if_not_exists(output_dir)?;
     let temp_extract_dir = Path::new(output_dir).join("temp_extract");
@@ -293,7 +294,56 @@ pub fn extract_specific_folder(
         create_directory_if_not_exists(Path::new(output_dir).join("extracted").to_str().unwrap())?;
         Path::new(output_dir).join("extracted")
     };
-    move_folder_contents(&extracted_folder_path, &destination)?;
+
+    // Filter files based on the filter parameter
+    for entry in fs::read_dir(&extracted_folder_path)? {
+        let entry = entry?;
+        let path = entry.path();
+        if let Some(filter) = filter {
+            let file_name = path.file_stem().unwrap().to_str().unwrap();
+            if file_name == filter {
+                let dest_path = destination.join(entry.file_name());
+                if path.is_dir() {
+                    fs::create_dir_all(&dest_path)?;
+                    move_folder_contents(&path, &dest_path)?;
+                    fs::remove_dir_all(&path)?;
+                } else {
+                    fs::copy(&path, &dest_path)?;
+                    fs::remove_file(&path)?;
+                }
+            }
+        } else {
+            let dest_path = destination.join(entry.file_name());
+            if path.is_dir() {
+                fs::create_dir_all(&dest_path)?;
+                move_folder_contents(&path, &dest_path)?;
+                fs::remove_dir_all(&path)?;
+            } else {
+                fs::copy(&path, &dest_path)?;
+                fs::remove_file(&path)?;
+            }
+        }
+    }
+
     fs::remove_dir_all(temp_extract_dir)?;
+    Ok(())
+}
+
+pub fn layer_full_extraction(
+    db_name: &str,
+    code: &str,
+    layer_name: &str,
+    project_name: &str,
+    filter: Option<&str>
+) -> Result<(), Box<dyn Error>> {
+    let archive_path = format!("tmp/{}_{}.7z", db_name, code);
+    let output_dir = format!("/resources/QGIS/{}", project_name);
+
+    if let Some(folder_name) = find_filepath_in_archive(&archive_path, layer_name)? {
+        extract_specific_folder(&archive_path, &folder_name, &output_dir, Some(layer_name),filter)?;
+    } else {
+        return Err(format!("Folder '{}' not found in archive '{}'", layer_name, archive_path).into());
+    }
+
     Ok(())
 }

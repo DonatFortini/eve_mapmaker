@@ -1,64 +1,71 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { MapPin, Plus, History, Download, Book, Settings } from "lucide-react"
-import { useState } from 'react'
-
+import { Button } from "@/components/ui/button";
+import { MapPin, FolderPlus, Book, Settings, FolderInput } from "lucide-react";
+import { open as openLink } from "@tauri-apps/api/shell";
 interface HomeScreenProps {
   onNewProject: () => void;
   onMainScreen: () => void;
 }
 
-
-export default function HomeScreen({ onNewProject, onMainScreen }: HomeScreenProps) {
+export default function HomeScreen({
+  onNewProject,
+  onMainScreen,
+}: HomeScreenProps) {
   const recentMaps = [
     { id: 1, name: "City Center Map" },
-    { id: 2, name: "National Park Trails" }
-  ]
+    { id: 2, name: "National Park Trails" },
+  ];
 
   return (
     <div className="flex h-screen w-screen bg-[#2D2D30] text-[#CCCCCC]">
-      <div className="bg-[#252526] p-4 flex flex-col w-64 transition-all duration-300 ease-in-out">
+      <div className="bg-[#252526] p-4 flex flex-col w-80 transition-all duration-300 ease-in-out">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold">MapMaker</h1>
+          <h1 className="text-4xl font-bold text-white tracking-wider">
+            <span className="text-[#FFD700]">Map</span>Maker
+          </h1>
         </div>
 
         <div className="flex flex-col">
-          <Button 
-            variant="ghost" 
-            className="justify-start text-left mb-2 hover:bg-[#3E3E42] hover:text-white"
+          <Button
+            variant="ghost"
+            size="lg"
+            className="justify-start text-left mb-2 p-4 hover:bg-[#3E3E42] hover:text-white"
             onClick={onMainScreen}
           >
-            <MapPin className="mr-2 h-4 w-4" />
+            <FolderInput className="mr-2 h-6 w-6" />
             Charger un projet
           </Button>
-          <Button 
-            variant="ghost" 
-            className="justify-start text-left mb-2 hover:bg-[#3E3E42] hover:text-white"
+          <Button
+            variant="ghost"
+            size="lg"
+            className="justify-start text-left mb-2 p-4 hover:bg-[#3E3E42] hover:text-white"
             onClick={onNewProject}
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Générer un nouveau projet
+            <FolderPlus className="mr-2 h-6 w-6" />
+            Nouveau projet
           </Button>
         </div>
-          
+
         <div className="mt-auto">
-          <h2 className="text-sm font-semibold mb-2">Quick Access</h2>
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="ghost" size="sm" className="justify-start">
-              <Book className="mr-2 h-4 w-4" />
-              Docs
+          <div className="grid grid-cols-2 gap-2 w-32">
+            <Button
+              variant="ghost"
+              size="lg"
+              className="justify-start p-4"
+              onClick={async () =>
+                await openLink("https://github.com/DonatFortini/eve_mapmaker")
+              }
+            >
+              <Book className="mr-2 h-6 w-6" />
             </Button>
-            <Button variant="ghost" size="sm" className="justify-start">
-              <Settings className="mr-2 h-4 w-4" />
-              Paramètres
+            <Button variant="ghost" size="lg" className="justify-start p-4">
+              <Settings className="mr-2 h-6 w-6" />
             </Button>
           </div>
         </div>
-        
       </div>
 
-      
       <div className="flex flex-col p-8 overflow-auto">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-xl font-semibold mb-4">Projet Récents</h2>
@@ -76,7 +83,6 @@ export default function HomeScreen({ onNewProject, onMainScreen }: HomeScreenPro
           </div>
         </div>
       </div>
-
     </div>
-  )
+  );
 }

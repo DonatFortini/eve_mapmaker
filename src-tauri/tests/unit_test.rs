@@ -61,15 +61,15 @@ mod tests {
 
     #[test]
     fn test_extract_specific_folder_success() {
-        let archive_path = "tmp/BDFORET_2A.7z";
-        let folder = utils::find_filepath_in_archive(archive_path, "FORMATION_VEGETALE.shp")
+        let archive_path = "tmp/BDTOPO_2A.7z";
+        let folder = utils::find_filepath_in_archive(archive_path, "AERODROME.shp")
             .unwrap()
             .unwrap();
         let output_dir = "resources/QGIS/test";
         let _ =
-            utils::extract_specific_folder(archive_path, &folder, output_dir, Some("Vegetation"));
+            utils::extract_specific_folder(archive_path, &folder, output_dir, Some("Topographie"),Some("AERODROME"));
         assert!(
-            std::path::Path::new("resources/QGIS/test/Vegetation/FORMATION_VEGETALE.shp").exists()
+            std::path::Path::new("resources/QGIS/test/Topographie/AERODROME.shp").exists()
         );
     }
 

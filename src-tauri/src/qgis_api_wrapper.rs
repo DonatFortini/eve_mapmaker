@@ -82,12 +82,62 @@ if essence_field_index == -1:
 unique_values = layer.uniqueValues(essence_field_index)
 categories = []
 for value in unique_values:
-    symbol = QgsFillSymbol.createSimple({{'color': ''50,200,80,255'', 'outline_style': 'no'}})
+    symbol = QgsFillSymbol.createSimple({{'color': '50,200,80,255', 'outline_style': 'no'}})
     category = QgsRendererCategory(value, symbol, str(value))
     categories.append(category)
 
 renderer = QgsCategorizedSymbolRenderer('ESSENCE', categories)
 layer.setRenderer(renderer)
+layer.triggerRepaint()
+
+# Move the layer to the bottom
+layers = project.layerTreeRoot().children()
+layer_node = project.layerTreeRoot().findLayer(layer.id())
+project.layerTreeRoot().insertChildNode(len(layers), layer_node.clone())
+
+project.write(project.fileName())
+"#,
+        project_name = project_name,
+        layer_name = layer_name
+    );
+
+    Python::with_gil(|py| {
+        py.run_bound(&code, None, None)?;
+        Ok(format!(
+            "Layer {} in project {} categorized by ESSENCE and moved to the bottom successfully",
+            layer_name, project_name
+        ))
+    })
+}
+
+pub fn setup_basic_topo_layer(project_name: &str, layer_name: &str) -> PyResult<String> {
+    let code = format!(
+        r#"
+from qgis.core import QgsProject, QgsSimpleLineSymbolLayer, QgsSimpleFillSymbolLayer, QgsSymbol
+from qgis.PyQt.QtGui import QColor
+
+project = QgsProject.instance()
+project.read("{project_name}")
+layer = project.mapLayersByName("{layer_name}")
+if not layer:
+    raise Exception("Layer not found")
+layer = layer[0]
+
+if layer_name in ["COURS_D_EAU", "TRONCON_DE_ROUTE", "TRONCON_DE_VOIE_FEREE", "ITINERAIRE_AUTRE"]:
+    symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+    symbol.deleteSymbolLayer(0)
+    symbol_layer = QgsSimpleLineSymbolLayer()
+    symbol_layer.setColor(QColor(0, 0, 0))
+    symbol_layer.setWidth(0.26)
+    symbol.appendSymbolLayer(symbol_layer)
+else:
+    symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+    symbol.deleteSymbolLayer(0)
+    symbol_layer = QgsSimpleFillSymbolLayer()
+    symbol_layer.setColor(QColor(0, 0, 0))
+    symbol.appendSymbolLayer(symbol_layer)
+
+layer.renderer().setSymbol(symbol)
 layer.triggerRepaint()
 project.write(project.fileName())
 "#,
@@ -98,7 +148,7 @@ project.write(project.fileName())
     Python::with_gil(|py| {
         py.run_bound(&code, None, None)?;
         Ok(format!(
-            "Layer {} in project {} categorized by ESSENCE successfully",
+            "Layer {} in project {} categorized successfully",
             layer_name, project_name
         ))
     })
@@ -147,7 +197,7 @@ pub fn edit_layer_field_color(
     layer_name: &str,
     category: &str,
     field_name: &str,
-    color: &str
+    color: &str,
 ) -> PyResult<String> {
     let code = format!(
         r#"
