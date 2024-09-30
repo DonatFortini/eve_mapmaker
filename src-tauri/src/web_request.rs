@@ -4,8 +4,6 @@ use scraper::{Html, Selector};
 use std::{error::Error, fs, path::Path};
 use tokio::{fs::File, io::AsyncWriteExt};
 
-#[tokio::main]
-
 /// Gets the URL of a SHP file from the IGN Database.
 ///
 /// # Parameters

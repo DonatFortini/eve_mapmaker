@@ -1,19 +1,24 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use eve_mapmaker::qgis_api_wrapper::{
-    create_blank_project, load_vector_layer_to_project, setup_basic_topo_layer,
-    setup_basic_veg_layer,
-};
+use eve_mapmaker::app_setup::setup_check;
+use eve_mapmaker::qgis_api_wrapper::*;
 use eve_mapmaker::utils::{get_departement_list, layer_full_extraction};
 use eve_mapmaker::web_request::{download_shp_file, get_departement_shp_file_url};
 use std::collections::HashMap;
 use tauri::Manager;
 
-///---------------------------------------------------------tauri commands---------------------------------------------------------
+//---------------------------------------------------------tauri commands---------------------------------------------------------
 
-//TODO : fix concurency issue with tokio
 #[tauri::command]
+/// Create a new project with the given code and name.
+///
+/// # Parameters
+/// - `code`: A string slice that holds the code of the department.
+/// - `name`: A string slice that holds the name of the project.
+///
+/// # Returns
+/// - Result<(), String>
 async fn open_new_project(
     app_handle: tauri::AppHandle,
     code: String,
@@ -28,7 +33,7 @@ async fn open_new_project(
         .emit_all("progress-update", "Recherche des fichiers")
         .map_err(|e| format!("Error emitting progress update: {:?}", e))?;
 
-    let urls = get_shp_file_urls(&code)?;
+    let urls = get_shp_file_urls(&code).await?;
 
     println!("urls: {:?}", urls);
 
@@ -58,44 +63,73 @@ async fn open_new_project(
 }
 
 #[tauri::command]
+/// Get the list of departments.
+///
+/// # Returns
+/// - HashMap<String, String> : A hashmap containing the code and name of the departments.
 fn get_dpts_list() -> HashMap<String, String> {
     return get_departement_list();
 }
 
-///---------------------------------------------------------main---------------------------------------------------------
+//---------------------------------------------------------main---------------------------------------------------------
 
 fn main() {
+    setup_check().expect("Setup check failed");
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![open_new_project, get_dpts_list])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
-///---------------------------------------------------------functions---------------------------------------------------------
+//---------------------------------------------------------functions---------------------------------------------------------
 
-fn get_shp_file_urls(code: &str) -> Result<Vec<String>, String> {
+/// Get the urls of the shp files for the given department code.
+/// # Parameters
+/// - `code`: A string slice that holds the code of the department.
+/// # Returns
+/// - Result<Vec<String>, String> : A vector containing the urls of the shp files.
+async fn get_shp_file_urls(code: &str) -> Result<Vec<String>, String> {
     let url1 = get_departement_shp_file_url(
         code,
         "https://geoservices.ign.fr/bdtopo#telechargementgpkgreg",
     )
+    .await
     .map_err(|e| format!("Error getting shp file url1: {:?}", e))?;
 
     let url2 =
         get_departement_shp_file_url(code, "https://geoservices.ign.fr/bdforet#telechargementv2")
+            .await
             .map_err(|e| format!("Error getting shp file url2: {:?}", e))?;
 
     Ok(vec![url1, url2])
 }
 
+/// Download the shp file from the given url.
+/// # Parameters
+/// - `url`: A string slice that holds the url of the shp file.
+/// - `code`: A string slice that holds the code of the department.
+/// # Returns
+/// - Result<(), String> : An empty result or an error message.
 async fn download_shp_files(urls: &[String], code: &str) -> Result<(), String> {
+    println!("downloading shp files");
     for url in urls {
         download_shp_file(url, code)
             .await
             .map_err(|e| format!("Error downloading shp file from {}: {:?}", url, e))?;
+        println!("downloaded shp file from {}", url);
     }
+    println!("done downloading shp files");
     Ok(())
 }
 
+//TODO : FIX THIS
+/// Prepare the layers for the given project.
+/// # Parameters
+/// - `name`: A string slice that holds the name of the project.
+/// - `code`: A string slice that holds the code of the department.
+/// # Returns
+/// - Result<(), String> : An empty result or an error message.
 fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
     layer_full_extraction("BDFORET", code, "FORMATION_VEGETALE", "Vegetation", None)
         .map_err(|e| format!("Error extracting layer1: {:?}", e))?;

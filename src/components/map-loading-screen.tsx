@@ -34,25 +34,37 @@ export default function LoaderScreen({
 
     const handleProgressUpdate = (event: any) => {
       const step = event.payload as string;
+      console.log("Progress Update", step);
       const stepIndex = steps.indexOf(step);
       if (stepIndex !== -1) {
         setCurrentStep(stepIndex);
       }
     };
 
-    const unlisten = listen("progress-update", handleProgressUpdate);
+    const setupListener = async () => {
+      const unlisten = await listen("progress-update", handleProgressUpdate);
+      return unlisten;
+    };
+
     const processMapCreation = () => {
-      setCurrentStep(0);
       invoke("open_new_project", { code: department, name: projectName }).catch(
         (err) => {
           setError(err.message);
         }
       );
     };
-    processMapCreation();
+
+    let unlisten: () => void;
+
+    setupListener().then((unsub) => {
+      unlisten = unsub;
+      processMapCreation();
+    });
 
     return () => {
-      unlisten.then((unsub) => unsub());
+      if (unlisten) {
+        unlisten();
+      }
     };
   }, [department, projectName]);
 

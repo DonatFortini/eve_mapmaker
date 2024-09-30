@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import {
   MapPin,
   Layers,
@@ -136,14 +136,6 @@ const MainScreen: React.FC<MainScreenProps> = ({ onGoBack }) => {
         {/* Placeholder for map */}
         <div className="absolute inset-0 bg-[#1E1E1E] flex items-center justify-center">
           <MapPin className="h-16 w-16 text-gray-600" />
-        </div>
-
-        {/* Top right controls */}
-        <div className="absolute top-4 right-4">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="User" />
-            <AvatarFallback>JD</AvatarFallback>
-          </Avatar>
         </div>
 
         {/* Bottom right zoom controls */}

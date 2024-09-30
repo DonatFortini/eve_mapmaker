@@ -149,6 +149,11 @@ pub fn get_departements_names() -> Vec<String> {
 
 //////----------------file management-----------------//////
 
+/// Create a directory if it does not exist.
+/// # Parameters
+/// - `path`: A string slice that holds the path of the directory.
+/// # Returns
+/// - An empty result or an error message.
 pub fn create_directory_if_not_exists(path: &str) -> Result<(), Box<dyn Error>> {
     if !Path::new(path).exists() {
         fs::create_dir_all(path)?;
@@ -156,6 +161,13 @@ pub fn create_directory_if_not_exists(path: &str) -> Result<(), Box<dyn Error>> 
     Ok(())
 }
 
+/// Compress a folder.
+/// # Parameters
+/// - `folder_directory_path`: A string slice that holds the path of the folder.
+/// - `folder_name`: A string slice that holds the name of the folder.
+/// - `destination_directory_path`: An optional string slice that holds the path of the destination directory.
+/// # Returns
+/// - An empty result or an error message.
 pub fn compress_folder(
     folder_directory_path: &str,
     folder_name: &str,
@@ -183,6 +195,12 @@ pub fn compress_folder(
     Ok(())
 }
 
+/// Extract an archive.
+/// # Parameters
+/// - `archive_path`: A string slice that holds the path of the archive.
+/// - `destination_directory_path`: An optional string slice that holds the path of the destination directory.
+/// # Returns
+/// - An empty result or an error message.
 pub fn extract_archive(
     archive_path: &str,
     destination_directory_path: Option<&str>,
@@ -206,6 +224,12 @@ pub fn extract_archive(
     Ok(())
 }
 
+/// Find a file path in an archive.
+/// # Parameters
+/// - `archive_path`: A string slice that holds the path of the archive.
+/// - `file_name`: A string slice that holds the name of the file.
+/// # Returns
+/// - An optional string or an error message. The string is the path of the file in the archive.
 pub fn find_filepath_in_archive(
     archive_path: &str,
     file_name: &str,
@@ -231,6 +255,13 @@ pub fn find_filepath_in_archive(
     }
 }
 
+/// Extract a specific file from an archive.
+/// # Parameters
+/// - `archive_path`: A string slice that holds the path of the archive.
+/// - `file_name`: A string slice that holds the name of the file.
+/// - `output_dir`: A string slice that holds the path of the output directory.
+/// # Returns
+/// - An empty result or an error message.
 pub fn extract_specific_file(
     archive_path: &str,
     file_name: &str,
@@ -246,6 +277,12 @@ pub fn extract_specific_file(
     Ok(())
 }
 
+/// Move the contents of a folder to another folder.
+/// # Parameters
+/// - `src_dir`: A string slice that holds the path of the source directory.
+/// - `dst_dir`: A string slice that holds the path of the destination directory.
+/// # Returns
+/// - An empty result or an error message.
 fn move_folder_contents(src_dir: &Path, dst_dir: &Path) -> Result<(), Box<dyn Error>> {
     if !src_dir.exists() {
         return Err(format!("Source directory does not exist: {}", src_dir.display()).into());
@@ -269,6 +306,15 @@ fn move_folder_contents(src_dir: &Path, dst_dir: &Path) -> Result<(), Box<dyn Er
     Ok(())
 }
 
+/// Extract a specific folder from an archive.
+/// # Parameters
+/// - `archive_path`: A string slice that holds the path of the archive.
+/// - `folder_name`: A string slice that holds the name of the folder.
+/// - `output_dir`: A string slice that holds the path of the output directory.
+/// - `extracted_name`: An optional string slice that holds the name of the extracted folder.
+/// - `filter`: An optional string slice that holds the name of the file to extract.
+/// # Returns
+/// - An empty result or an error message.
 pub fn extract_specific_folder(
     archive_path: &str,
     folder_name: &str,
@@ -329,20 +375,39 @@ pub fn extract_specific_folder(
     Ok(())
 }
 
+/// Extract a specific folder from an archive.
+/// # Parameters
+/// - `archive_path`: A string slice that holds the path of the archive.
+/// - `folder_name`: A string slice that holds the name of the folder.
+/// - `output_dir`: A string slice that holds the path of the output directory.
+/// - `extracted_name`: An optional string slice that holds the name of the extracted folder.
+/// - `filter`: An optional string slice that holds the name of the file to extract.
+/// # Returns
+/// - An empty result or an error message.
 pub fn layer_full_extraction(
     db_name: &str,
     code: &str,
     layer_name: &str,
     project_name: &str,
-    filter: Option<&str>
+    filter: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
     let archive_path = format!("tmp/{}_{}.7z", db_name, code);
     let output_dir = format!("/resources/QGIS/{}", project_name);
 
     if let Some(folder_name) = find_filepath_in_archive(&archive_path, layer_name)? {
-        extract_specific_folder(&archive_path, &folder_name, &output_dir, Some(layer_name),filter)?;
+        extract_specific_folder(
+            &archive_path,
+            &folder_name,
+            &output_dir,
+            Some(layer_name),
+            filter,
+        )?;
     } else {
-        return Err(format!("Folder '{}' not found in archive '{}'", layer_name, archive_path).into());
+        return Err(format!(
+            "Folder '{}' not found in archive '{}'",
+            layer_name, archive_path
+        )
+        .into());
     }
 
     Ok(())

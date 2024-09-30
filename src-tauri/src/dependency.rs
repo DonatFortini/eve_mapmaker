@@ -9,6 +9,10 @@ pub enum DependencyError {
     SevenZipNotInstalled,
 }
 
+/// Check if all dependencies are installed.
+///
+/// # Returns
+/// - Result<(), DependencyError>
 pub fn check_dependencies() -> Result<(), DependencyError> {
     let qgis_command = if cfg!(target_os = "windows") {
         "qgis-bin.exe"
@@ -32,9 +36,7 @@ pub fn check_dependencies() -> Result<(), DependencyError> {
         "python3"
     };
 
-    let python_output = Command::new(python_command)
-        .arg("--version")
-        .output();
+    let python_output = Command::new(python_command).arg("--version").output();
 
     match python_output {
         Ok(output) => {
@@ -55,7 +57,9 @@ pub fn check_dependencies() -> Result<(), DependencyError> {
             .output();
 
         if output.is_err() || !output.unwrap().status.success() {
-            return Err(DependencyError::PythonModuleNotInstalled(module.to_string()));
+            return Err(DependencyError::PythonModuleNotInstalled(
+                module.to_string(),
+            ));
         }
     }
 

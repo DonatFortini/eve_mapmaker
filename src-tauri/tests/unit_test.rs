@@ -66,11 +66,14 @@ mod tests {
             .unwrap()
             .unwrap();
         let output_dir = "resources/QGIS/test";
-        let _ =
-            utils::extract_specific_folder(archive_path, &folder, output_dir, Some("Topographie"),Some("AERODROME"));
-        assert!(
-            std::path::Path::new("resources/QGIS/test/Topographie/AERODROME.shp").exists()
+        let _ = utils::extract_specific_folder(
+            archive_path,
+            &folder,
+            output_dir,
+            Some("Topographie"),
+            Some("AERODROME"),
         );
+        assert!(std::path::Path::new("resources/QGIS/test/Topographie/AERODROME.shp").exists());
     }
 
     #[test]
@@ -84,46 +87,50 @@ mod tests {
 
     // test IGN
 
-    #[test]
-    fn test_get_departement_shp_forest_url_success() {
+    #[tokio::test]
+    async fn test_get_departement_shp_forest_url_success() {
         let result = web_request::get_departement_shp_file_url(
             "2A",
             "https://geoservices.ign.fr/bdforet#telechargementv2",
-        );
+        )
+        .await;
         assert_eq!(
             result.unwrap(),
             "https://data.geopf.fr/telechargement/download/BDFORET/BDFORET_2-0__SHP_LAMB93_D02A_2017-05-10/BDFORET_2-0__SHP_LAMB93_D02A_2017-05-10.7z"
         );
     }
 
-    #[test]
-    fn test_get_departement_shp_forest_no_file_found() {
+    #[tokio::test]
+    async fn test_get_departement_shp_forest_no_file_found() {
         let result = web_request::get_departement_shp_file_url(
             "99",
             "https://geoservices.ign.fr/bdforet#telechargementv2",
-        );
+        )
+        .await;
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "No file found");
     }
 
-    #[test]
-    fn test_get_departement_shp_topo_url_success() {
+    #[tokio::test]
+    async fn test_get_departement_shp_topo_url_success() {
         let result = web_request::get_departement_shp_file_url(
             "2A",
             "https://geoservices.ign.fr/bdtopo#telechargementgpkgreg",
-        );
+        )
+        .await;
         assert_eq!(
             result.unwrap(),
             "https://data.geopf.fr/telechargement/download/BDTOPO/BDTOPO_3-4_TOUSTHEMES_SHP_LAMB93_D02A_2024-06-15/BDTOPO_3-4_TOUSTHEMES_SHP_LAMB93_D02A_2024-06-15.7z"
         );
     }
 
-    #[test]
-    fn test_get_departement_shp_topo_no_file_found() {
+    #[tokio::test]
+    async fn test_get_departement_shp_topo_no_file_found() {
         let result = web_request::get_departement_shp_file_url(
             "99",
             "https://geoservices.ign.fr/bdtopo#telechargementgpkgreg",
-        );
+        )
+        .await;
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "No file found");
     }

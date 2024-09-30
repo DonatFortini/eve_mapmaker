@@ -74,7 +74,7 @@ export default function HomeScreen({
               <Button
                 key={map.id}
                 variant="outline"
-                className="h-40 flex flex-col items-center justify-center text-center p-2 hover:bg-[#3E3E42] border-dashed border-2 border-gray-600"
+                className="h-40 flex flex-col items-center justify-center text-center p-2 hover:bg-[#3E3E42] border-dashed border-2 border-gray-600 text-gray-800 hover:text-gray-200"
               >
                 <MapPin className="mb-2 h-8 w-8 text-gray-500" />
                 <span className="text-sm">{map.name}</span>

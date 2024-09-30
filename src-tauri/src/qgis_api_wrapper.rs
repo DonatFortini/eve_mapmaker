@@ -2,6 +2,13 @@ use crate::utils::create_directory_if_not_exists;
 use pyo3::{prelude::*, types::PyDict};
 
 #[pyfunction]
+/// Use the QGIS API to create a blank project.
+///
+/// # Parameters
+/// - `project_name`: A string slice that holds the name of the project.
+///
+/// # Returns
+/// - py Error or Result.
 pub fn create_blank_project(project_name: &str) -> PyResult<String> {
     let project_folder = format!("resources/QGIS/{}", project_name);
     let project_file_path = format!("{}/{}.qgz", project_folder, project_name);
@@ -28,6 +35,15 @@ project.write("{project_file_path}")
 }
 
 #[pyfunction]
+/// Use the QGIS API to load a vector layer to a project.
+///
+/// # Parameters
+/// - `project_name`: A string slice that holds the name of the project.
+/// - `layer_path`: A string slice that holds the path to the layer.
+/// - `layer_name`: A string slice that holds the name of the layer.
+///
+/// # Returns
+/// - py Error or Result.
 pub fn load_vector_layer_to_project(
     project_name: &str,
     layer_path: &str,
@@ -65,6 +81,15 @@ project.write("{project_file_path}")
 }
 
 #[pyfunction]
+/// Use the QGIS API to apply the basic setup needed for a vegetation layer.
+/// (Categorize by ESSENCE, move to the bottom and apply a green color)
+///
+/// # Parameters
+/// - `project_name`: A string slice that holds the name of the project.
+/// - `layer_name`: A string slice that holds the name of the layer.
+///
+/// # Returns
+/// - py Error or Result.
 pub fn setup_basic_veg_layer(project_name: &str, layer_name: &str) -> PyResult<String> {
     let code = format!(
         r#"
@@ -90,7 +115,6 @@ renderer = QgsCategorizedSymbolRenderer('ESSENCE', categories)
 layer.setRenderer(renderer)
 layer.triggerRepaint()
 
-# Move the layer to the bottom
 layers = project.layerTreeRoot().children()
 layer_node = project.layerTreeRoot().findLayer(layer.id())
 project.layerTreeRoot().insertChildNode(len(layers), layer_node.clone())
@@ -110,6 +134,16 @@ project.write(project.fileName())
     })
 }
 
+#[pyfunction]
+/// Use the QGIS API to apply the basic setup needed for a topography layer.
+/// (Categorize by layer name, set a black color and a width of 0.26 for lines and no outline for polygons)
+///
+/// # Parameters
+/// - `project_name`: A string slice that holds the name of the project.
+/// - `layer_name`: A string slice that holds the name of the layer.
+///
+/// # Returns
+/// - py Error or Result.
 pub fn setup_basic_topo_layer(project_name: &str, layer_name: &str) -> PyResult<String> {
     let code = format!(
         r#"
@@ -155,6 +189,16 @@ project.write(project.fileName())
 }
 
 #[pyfunction]
+/// Use the QGIS API to extract all the unique values of a field in a layer.
+/// The field must be of type string.
+///
+/// # Parameters
+/// - `project_name`: A string slice that holds the name of the project.
+/// - `layer_name`: A string slice that holds the name of the layer.
+/// - `category`: A string slice that holds the name of the field.
+///
+/// # Returns
+/// - A vector of strings representing the unique values of the field.
 pub fn get_layer_fields_by_category(
     project_name: &str,
     layer_name: &str,
@@ -192,6 +236,20 @@ unique_values
     })
 }
 
+#[pyfunction]
+/// Use the QGIS API to edit the color of a field in a layer.
+/// The field must be of type string.
+/// The color must be in the format "R,G,B,A" where R, G, B and A are integers between 0 and 255.
+///
+/// # Parameters
+/// - `project_name`: A string slice that holds the name of the project.
+/// - `layer_name`: A string slice that holds the name of the layer.
+/// - `category`: A string slice that holds the name of the field.
+/// - `field_name`: A string slice that holds the name of the field.
+/// - `color`: A string slice that holds the color to be applied.
+///
+/// # Returns
+/// - A string slice representing the result of the operation.
 pub fn edit_layer_field_color(
     project_name: &str,
     layer_name: &str,
