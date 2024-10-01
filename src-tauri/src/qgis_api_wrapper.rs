@@ -300,3 +300,74 @@ project.write(project.fileName())
         ))
     })
 }
+
+#[pyfunction]
+/// Export a map from a QGIS project to a JPEG file with specified coordinates and output file name.
+/// Zoom is fixed to 1:25000 and DPI is fixed to 63.5.
+///
+/// # Parameters
+/// - `project_name`: The name of the QGIS project.
+/// - `xmin`: The minimum x-coordinate of the bounding box.
+/// - `ymin`: The minimum y-coordinate of the bounding box.
+/// - `xmax`: The maximum x-coordinate of the bounding box.
+/// - `ymax`: The maximum y-coordinate of the bounding box.
+/// - `output_image_name`: The name of the output image file (without extension).
+///
+/// # Returns
+/// - A `PyResult<String>` indicating success or failure.
+pub fn export_map_to_jpg(
+    project_name: &str,
+    xmin: f64,
+    ymin: f64,
+    xmax: f64,
+    ymax: f64,
+    output_image_name: &str,
+) -> PyResult<String> {
+    let zoom = 25000.0;
+    let dpi = 63.5;
+
+    let project_file_path = format!("resources/QGIS/{}.qgz", project_name);
+
+    let output_image_path = format!("resources/QGIS/{}.jpg", output_image_name);
+
+    let code = format!(
+        r#"
+from qgis.core import QgsProject, QgsLayout, QgsLayoutItemMap, QgsLayoutExporter, QgsCoordinateReferenceSystem, QgsRectangle
+from qgis.PyQt.QtCore import QSize, QRectF
+project = QgsProject.instance()
+project.read("{project_file_path}")
+layout = QgsLayout(project)
+layout.initializeDefaults()
+map_item = QgsLayoutItemMap(layout)
+layout.addLayoutItem(map_item)
+map_rect = QgsRectangle({xmin}, {ymin}, {xmax}, {ymax})
+map_item.setExtent(map_rect)
+map_item.setCrs(QgsCoordinateReferenceSystem('EPSG:2154'))
+map_item.setScale({zoom})
+map_item.setFixedSize(QSize(400, 400))
+map_item.attemptMove(QRectF(5, 5, 200, 150)) 
+exporter = QgsLayoutExporter(layout)
+export_settings = QgsLayoutExporter.ImageExportSettings()
+export_settings.dpi = {dpi}
+result = exporter.exportToImage("{output_image_path}", export_settings)
+if result == QgsLayoutExporter.Success:
+    print("Map exported successfully to " + "{output_image_path}")
+else:
+    print("Failed to export map")
+"#,
+        project_file_path = project_file_path,
+        xmin = xmin,
+        ymin = ymin,
+        xmax = xmax,
+        ymax = ymax,
+        dpi = dpi,
+        zoom = zoom,
+        output_image_path = output_image_path,
+    );
+
+    Python::with_gil(|py| {
+        py.run_bound(&code, None, None)?;
+        let result = format!("Map exported successfully to {}", output_image_path);
+        Ok(result)
+    })
+}
