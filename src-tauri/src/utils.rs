@@ -27,6 +27,8 @@ lazy_static! {
         ("17", "Charente-Maritime"),
         ("18", "Cher"),
         ("19", "Corrèze"),
+        ("2A", "Corse-du-Sud"),
+        ("2B", "Haute-Corse"),
         ("21", "Côte-d'Or"),
         ("22", "Côtes-d'Armor"),
         ("23", "Creuse"),
@@ -36,8 +38,6 @@ lazy_static! {
         ("27", "Eure"),
         ("28", "Eure-et-Loir"),
         ("29", "Finistère"),
-        ("2A", "Corse-du-Sud"),
-        ("2B", "Haute-Corse"),
         ("30", "Gard"),
         ("31", "Haute-Garonne"),
         ("32", "Gers"),
@@ -392,9 +392,10 @@ pub fn layer_full_extraction(
     filter: Option<&str>,
 ) -> Result<(), Box<dyn Error>> {
     let archive_path = format!("tmp/{}_{}.7z", db_name, code);
-    let output_dir = format!("/resources/QGIS/{}", project_name);
+    let output_dir = format!("resources/QGIS/{}", project_name);
 
     if let Some(folder_name) = find_filepath_in_archive(&archive_path, layer_name)? {
+        println!("Found folder: {}", folder_name);
         extract_specific_folder(
             &archive_path,
             &folder_name,
@@ -403,6 +404,10 @@ pub fn layer_full_extraction(
             filter,
         )?;
     } else {
+        println!(
+            "Folder '{}' not found in archive '{}'",
+            layer_name, archive_path
+        );
         return Err(format!(
             "Folder '{}' not found in archive '{}'",
             layer_name, archive_path

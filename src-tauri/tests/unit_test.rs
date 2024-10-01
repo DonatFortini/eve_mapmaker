@@ -226,7 +226,7 @@ mod tests {
     fn test_porto_vecchio_map_success() {
         pyo3::prepare_freethreaded_python();
         let result = qgis_api_wrapper::export_map_to_jpg(
-            "resources/QGIS/test/test.qgz",
+            "resources/QGIS/test/Corse.qgz",
             1210000.0,
             6093000.0,
             1234000.0,

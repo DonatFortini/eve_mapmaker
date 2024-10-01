@@ -10,6 +10,8 @@ use tauri::Manager;
 
 //---------------------------------------------------------tauri commands---------------------------------------------------------
 
+//TODO : VERIFY ALL PATH also in pygis
+
 #[tauri::command]
 /// Create a new project with the given code and name.
 ///
@@ -131,17 +133,34 @@ async fn download_shp_files(urls: &[String], code: &str) -> Result<(), String> {
 /// # Returns
 /// - Result<(), String> : An empty result or an error message.
 fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
-    layer_full_extraction("BDFORET", code, "FORMATION_VEGETALE", "Vegetation", None)
-        .map_err(|e| format!("Error extracting layer1: {:?}", e))?;
+    println!("preparing layers");
+    println!("name: {}", name);
+    layer_full_extraction(
+        "BDFORET",
+        code,
+        "FORMATION_VEGETALE",
+        &format!("{}/Vegetation", name),
+        None,
+    )
+    .map_err(|e| format!("Error extracting layer1: {:?}", e))?;
+
+    println!("layer1 extracted");
 
     load_vector_layer_to_project(
         name,
-        &format!("/resources/QGIS/{}/Vegetation/FORMATION_VEGETALE.shp", name),
+        &format!(
+            "resources/QGIS/{}/Vegetation/FORMATION_VEGETALE/FORMATION_VEGETALE.shp",
+            name
+        ),
         "BDFORET",
     )
     .map_err(|e| format!("Error loading layer to project: {:?}", e))?;
 
+    println!("layer1 loaded");
+
     let _ = setup_basic_veg_layer(name, "BDFORET");
+
+    println!("veg layer setup");
 
     let topo_layers = [
         "TERRAIN_DE_SPORT",
@@ -161,17 +180,32 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
     ];
 
     for layer in topo_layers.iter() {
-        layer_full_extraction("BDTOPO", code, layer, "Topographie", Some(layer))
-            .map_err(|e| format!("Error extracting layer1: {:?}", e))?;
+        layer_full_extraction(
+            "BDTOPO",
+            code,
+            layer,
+            &format!("{}/Topographie", name),
+            Some(layer),
+        )
+        .map_err(|e| format!("Error extracting layer1: {:?}", e))?;
+
+        println!("layer {} extracted", layer);
 
         load_vector_layer_to_project(
             name,
-            &format!("/resources/QGIS/{}/Topographie/{}.shp", name, layer),
+            &format!(
+                "resources/QGIS/{}/Topographie/{}/{}.shp",
+                name, layer, layer
+            ),
             layer,
         )
         .map_err(|e| format!("Error loading layer to project: {:?}", e))?;
 
+        println!("layer {} loaded", layer);
+
         let _ = setup_basic_topo_layer(name, layer);
+
+        println!("topo layer {} setup", layer);
     }
 
     Ok(())

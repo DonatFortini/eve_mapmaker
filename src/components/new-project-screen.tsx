@@ -37,6 +37,8 @@ const NewProjectScreen: React.FC<NewProjectScreenProps> = ({
     fetchDepartments();
   }, []);
 
+  const sortedDepartmentKeys = Object.keys(departments).sort();
+
   return (
     <div className="min-h-screen bg-[#2D2D30] text-[#CCCCCC] p-8">
       <Button variant="ghost" className="mb-4" onClick={onGoBack}>
@@ -89,9 +91,9 @@ const NewProjectScreen: React.FC<NewProjectScreenProps> = ({
                     <SelectValue placeholder="Selectionez votre département" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#3E3E42] border-[#3E3E42] text-white">
-                    {Object.entries(departments).map(([key, value]) => (
+                    {sortedDepartmentKeys.map((key) => (
                       <SelectItem key={key} value={key}>
-                        {value}
+                        {departments[key]}{" "}
                       </SelectItem>
                     ))}
                   </SelectContent>

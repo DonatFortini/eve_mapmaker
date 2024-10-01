@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { MapPin, FolderPlus, Book, Settings, FolderInput } from "lucide-react";
+import MapPreview from "@/components/map-preview";
+import { FolderPlus, Book, Settings, FolderInput } from "lucide-react";
 import { open as openLink } from "@tauri-apps/api/shell";
 interface HomeScreenProps {
   onNewProject: () => void;
@@ -15,6 +16,10 @@ export default function HomeScreen({
   const recentMaps = [
     { id: 1, name: "City Center Map" },
     { id: 2, name: "National Park Trails" },
+    { id: 3, name: "Historical District" },
+    { id: 4, name: "Local Bike Paths" },
+    { id: 5, name: "Tourist Attractions" },
+    { id: 6, name: "Local Parks" },
   ];
 
   return (
@@ -71,14 +76,11 @@ export default function HomeScreen({
           <h2 className="text-xl font-semibold mb-4">Projet Récents</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {recentMaps.map((map) => (
-              <Button
-                key={map.id}
-                variant="outline"
-                className="h-40 flex flex-col items-center justify-center text-center p-2 hover:bg-[#3E3E42] border-dashed border-2 border-gray-600 text-gray-800 hover:text-gray-200"
-              >
-                <MapPin className="mb-2 h-8 w-8 text-gray-500" />
-                <span className="text-sm">{map.name}</span>
-              </Button>
+              <MapPreview
+                title={map.name}
+                imageUrl={`/path/to/map/images/${map.id}.png`}
+                onClick={() => console.log(`Clicked on map ${map.id}`)}
+              />
             ))}
           </div>
         </div>

@@ -301,6 +301,8 @@ project.write(project.fileName())
     })
 }
 
+//TODO: Fix this
+
 #[pyfunction]
 /// Export a map from a QGIS project to a JPEG file with specified coordinates and output file name.
 /// Zoom is fixed to 1:25000 and DPI is fixed to 63.5.
@@ -334,26 +336,34 @@ pub fn export_map_to_jpg(
         r#"
 from qgis.core import QgsProject, QgsLayout, QgsLayoutItemMap, QgsLayoutExporter, QgsCoordinateReferenceSystem, QgsRectangle
 from qgis.PyQt.QtCore import QSize, QRectF
-project = QgsProject.instance()
-project.read("{project_file_path}")
-layout = QgsLayout(project)
-layout.initializeDefaults()
-map_item = QgsLayoutItemMap(layout)
-layout.addLayoutItem(map_item)
-map_rect = QgsRectangle({xmin}, {ymin}, {xmax}, {ymax})
-map_item.setExtent(map_rect)
-map_item.setCrs(QgsCoordinateReferenceSystem('EPSG:2154'))
-map_item.setScale({zoom})
-map_item.setFixedSize(QSize(400, 400))
-map_item.attemptMove(QRectF(5, 5, 200, 150)) 
-exporter = QgsLayoutExporter(layout)
-export_settings = QgsLayoutExporter.ImageExportSettings()
-export_settings.dpi = {dpi}
-result = exporter.exportToImage("{output_image_path}", export_settings)
-if result == QgsLayoutExporter.Success:
-    print("Map exported successfully to " + "{output_image_path}")
-else:
-    print("Failed to export map")
+try:
+    project = QgsProject.instance()
+    project.read("{project_file_path}")
+    print("Project loaded successfully")
+    layout = QgsLayout(project)
+    print("Layout created")
+    layout.initializeDefaults()
+    print("Layout initialized with defaults")
+    map_item = QgsLayoutItemMap(layout)
+    print("Map item created")
+    layout.addLayoutItem(map_item)
+    print("Map item added to layout")
+    map_rect = QgsRectangle({xmin}, {ymin}, {xmax}, {ymax})
+    map_item.setExtent(map_rect)
+    map_item.setCrs(QgsCoordinateReferenceSystem('EPSG:2154'))
+    map_item.setScale({zoom})
+    map_item.setFixedSize(QSize(400, 400))
+    map_item.attemptMove(QRectF(5, 5, 200, 150)) 
+    exporter = QgsLayoutExporter(layout)
+    export_settings = QgsLayoutExporter.ImageExportSettings()
+    export_settings.dpi = {dpi}
+    result = exporter.exportToImage("{output_image_path}", export_settings)
+    if result == QgsLayoutExporter.Success:
+        print("Map exported successfully to " + "{output_image_path}")
+    else:
+        print("Failed to export map")
+except Exception as e:
+    print("An error occurred: " + str(e))
 "#,
         project_file_path = project_file_path,
         xmin = xmin,
