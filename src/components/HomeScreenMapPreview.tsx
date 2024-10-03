@@ -2,17 +2,19 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 
-interface MapPreviewProps {
+interface HomeScreenMapPreviewProps {
   title: string;
-  imageUrl: string;
+  image_path: string;
+  project_path: string;
   onClick: () => void;
 }
 
-export default function MapPreview({
+export default function HomeScreenMapPreview({
   title,
-  imageUrl,
+  image_path,
+  project_path,
   onClick,
-}: MapPreviewProps) {
+}: HomeScreenMapPreviewProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -26,10 +28,10 @@ export default function MapPreview({
     >
       <CardContent className="p-2 sm:p-4">
         <div className="relative aspect-video mb-2 overflow-hidden rounded-md">
-          {imageUrl ? (
+          {image_path ? (
             <img
-              src={imageUrl}
-              alt={`Preview of ${title}`}
+              src={image_path}
+              alt={`Preview of ${image_path}`}
               className="w-full h-full object-cover"
             />
           ) : (
@@ -41,6 +43,9 @@ export default function MapPreview({
         <h3 className="text-sm sm:text-lg font-semibold text-[#CCCCCC] truncate">
           {title}
         </h3>
+        <p className="text-xs sm:text-sm text-[#CCCCCC] truncate">
+          {project_path}
+        </p>
       </CardContent>
     </Card>
   );

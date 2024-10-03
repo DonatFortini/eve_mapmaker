@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
 import "./App.css";
-import HomeScreen from "@/components/home-screen";
-import MainScreen from "@/components/main-screen";
-import LoaderScreen from "@/components/map-loading-screen";
-import NewProjectScreen from "@/components/new-project-screen";
+import HomeScreen from "@/components/HomeScreen";
+import MainScreen from "@/components/MainScreen";
+import CreationLoaderScreen from "@/components/CreationLoaderScreen";
+import NewProjectScreen from "@/components/NewProjectScreen";
 
 type ScreenType = "home" | "newProject" | "main" | "loader";
 
@@ -12,7 +12,7 @@ const screenComponents: Record<ScreenType, React.ComponentType<any>> = {
   home: HomeScreen,
   newProject: NewProjectScreen,
   main: MainScreen,
-  loader: LoaderScreen,
+  loader: CreationLoaderScreen,
 };
 
 const App = () => {
@@ -31,7 +31,10 @@ const App = () => {
   return (
     <div className="App">
       {currentScreen === "loader" ? (
-        <LoaderScreen department={department} projectName={projectName} />
+        <CreationLoaderScreen
+          department={department}
+          projectName={projectName}
+        />
       ) : (
         <ScreenComponent
           onNewProject={() => setCurrentScreen("newProject")}

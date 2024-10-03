@@ -13,15 +13,15 @@ const steps = [
   "Finalisation",
 ];
 
-interface LoaderScreenProps {
+interface CreationLoaderScreenProps {
   department: string;
   projectName: string;
 }
 
-export default function LoaderScreen({
+export default function CreationLoaderScreen({
   department,
   projectName,
-}: LoaderScreenProps) {
+}: CreationLoaderScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const isInitialMount = useRef(true);
