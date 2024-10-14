@@ -1,5 +1,33 @@
-use crate::utils::create_directory_if_not_exists;
+use crate::utils::{self, create_directory_if_not_exists};
 use pyo3::{prelude::*, types::PyDict};
+
+#[pyfunction]
+pub fn initialize_qgis_app_path() -> PyResult<String> {
+    let os = utils::get_operating_system();
+    let path = match os {
+        "windows" => "AppData\\Roaming\\QGIS\\QGIS3",
+        "linux" => ".local/share/QGIS/QGIS3",
+        "macos" => "Library/Application Support/QGIS/QGIS3",
+        _ => {
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                "Unsupported operating system",
+            ))
+        }
+    };
+
+    let code = format!(
+        r#"
+from qgis.core import QgsApplication
+QgsApplication.setPrefixPath("{path}", True)
+"#,
+        path = path
+    );
+
+    Python::with_gil(|py| {
+        py.run_bound(&code, None, None)?;
+        Ok("QGIS app path initialized".to_string())
+    })
+}
 
 #[pyfunction]
 /// Use the QGIS API to create a blank project.
@@ -19,7 +47,7 @@ pub fn create_blank_project(project_name: &str) -> PyResult<String> {
         r#"
 from qgis.core import QgsProject
 project = QgsProject.instance()
-project.clear()  # Start with a blank project
+project.clear() 
 project.write("{project_file_path}")
 "#,
         project_file_path = project_file_path
@@ -49,24 +77,20 @@ pub fn load_vector_layer_to_project(
     layer_path: &str,
     layer_name: &str,
 ) -> PyResult<String> {
-    let project_file_path = if project_name.ends_with(".qgz") {
-        project_name.to_string()
-    } else {
-        format!("{}.qgz", project_name)
-    };
-
     let code = format!(
         r#"
 from qgis.core import QgsProject, QgsVectorLayer
+from qgis.PyQt.QtCore import QCoreApplication
 project = QgsProject.instance()
-project.read("{project_file_path}")
+project.read("{project_name}")
 layer = QgsVectorLayer("{layer_path}", "{layer_name}", "ogr")
 if not layer.isValid():
-    raise Exception("Layer failed to load")
-project.addMapLayer(layer)
-project.write("{project_file_path}")
+    raise Exception("Layer not valid")
+else:
+    project.addMapLayer(layer)
+project.write(project.fileName())
 "#,
-        project_file_path = project_file_path,
+        project_name = project_name,
         layer_path = layer_path,
         layer_name = layer_name
     );
@@ -97,6 +121,7 @@ from qgis.core import QgsProject, QgsCategorizedSymbolRenderer, QgsField, QgsFil
 from qgis.PyQt.QtGui import QColor
 project = QgsProject.instance()
 project.read("{project_name}")
+
 layer = project.mapLayersByName("{layer_name}")
 if not layer:
     raise Exception("Layer not found")
@@ -107,17 +132,16 @@ if essence_field_index == -1:
 unique_values = layer.uniqueValues(essence_field_index)
 categories = []
 for value in unique_values:
-    symbol = QgsFillSymbol.createSimple({{'color': '50,200,80,255', 'outline_style': 'no'}})
+    if str(value) in ['Feuillus', 'Châtaignier', 'Chênes sempervirents', 'Chênes décidus','Hêtre']:
+        symbol = QgsFillSymbol.createSimple({{'color': '80,200,120,255', 'outline_style': 'no'}})
+    else:
+        symbol = QgsFillSymbol.createSimple({{'color': '50,200,80,255', 'outline_style': 'no'}})
     category = QgsRendererCategory(value, symbol, str(value))
     categories.append(category)
 
 renderer = QgsCategorizedSymbolRenderer('ESSENCE', categories)
 layer.setRenderer(renderer)
 layer.triggerRepaint()
-
-layers = project.layerTreeRoot().children()
-layer_node = project.layerTreeRoot().findLayer(layer.id())
-project.layerTreeRoot().insertChildNode(len(layers), layer_node.clone())
 
 project.write(project.fileName())
 "#,
@@ -133,6 +157,8 @@ project.write(project.fileName())
         ))
     })
 }
+
+// TODO :  add all layers in a single group and make the group on top and zoom on it
 
 #[pyfunction]
 /// Use the QGIS API to apply the basic setup needed for a topography layer.
@@ -157,19 +183,14 @@ if not layer:
     raise Exception("Layer not found")
 layer = layer[0]
 
-if layer_name in ["COURS_D_EAU", "TRONCON_DE_ROUTE", "TRONCON_DE_VOIE_FEREE", "ITINERAIRE_AUTRE"]:
+if layer_name in ["COURS_D_EAU", "TRONCON_DE_ROUTE", "TRONCON_DE_VOIE_FEREE"]:
     symbol = QgsSymbol.defaultSymbol(layer.geometryType())
     symbol.deleteSymbolLayer(0)
-    symbol_layer = QgsSimpleLineSymbolLayer()
-    symbol_layer.setColor(QColor(0, 0, 0))
-    symbol_layer.setWidth(0.26)
-    symbol.appendSymbolLayer(symbol_layer)
+    symbol.appendSymbolLayer(QgsSimpleLineSymbolLayer.create({{'color': '0,0,0,255', 'width': '0.26'}}))
 else:
     symbol = QgsSymbol.defaultSymbol(layer.geometryType())
     symbol.deleteSymbolLayer(0)
-    symbol_layer = QgsSimpleFillSymbolLayer()
-    symbol_layer.setColor(QColor(0, 0, 0))
-    symbol.appendSymbolLayer(symbol_layer)
+    symbol.appendSymbolLayer(QgsSimpleFillSymbolLayer.create({{'color': '0,0,0,255', 'outline_style': 'no'}}))
 
 layer.renderer().setSymbol(symbol)
 layer.triggerRepaint()
@@ -301,7 +322,7 @@ project.write(project.fileName())
     })
 }
 
-//TODO: Fix this
+//TODO: Fix this ?
 
 #[pyfunction]
 /// Export a map from a QGIS project to a JPEG file with specified coordinates and output file name.
@@ -334,13 +355,15 @@ pub fn export_map_to_jpg(
 
     let code = format!(
         r#"
-from qgis.core import QgsProject, QgsLayout, QgsLayoutItemMap, QgsLayoutExporter, QgsCoordinateReferenceSystem, QgsRectangle
+from qgis.core import QgsProject, QgsLayout,QgsPrintLayout, QgsLayoutItemMap, QgsLayoutExporter, QgsCoordinateReferenceSystem, QgsRectangle
 from qgis.PyQt.QtCore import QSize, QRectF
 try:
     project = QgsProject.instance()
     project.read("{project_file_path}")
-    print("Project loaded successfully")
-    layout = QgsLayout(project)
+    print("Project read")
+    layout = QgsPrintLayout(project)
+    print("Layout created")
+    layout.initializeDefaults()
     print("Layout created")
     layout.initializeDefaults()
     print("Layout initialized with defaults")

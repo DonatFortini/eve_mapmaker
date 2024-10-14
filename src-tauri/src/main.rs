@@ -2,15 +2,16 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use eve_mapmaker::app_setup::setup_check;
-use eve_mapmaker::qgis_api_wrapper::*;
-use eve_mapmaker::utils::{get_departement_list, layer_full_extraction};
+use eve_mapmaker::utils::{get_departement_list, get_previous_projects, layer_full_extraction};
 use eve_mapmaker::web_request::{download_shp_file, get_departement_shp_file_url};
+use eve_mapmaker::{qgis_api_wrapper::*, utils};
 use std::collections::HashMap;
+use std::path::Path;
 use tauri::Manager;
 
 //---------------------------------------------------------tauri commands---------------------------------------------------------
 
-//TODO : VERIFY ALL PATH also in pygis
+//TODO : CHANGE THE STEPS ORDER IN THE FRONTEND
 
 #[tauri::command]
 /// Create a new project with the given code and name.
@@ -26,11 +27,6 @@ async fn open_new_project(
     code: String,
     name: String,
 ) -> Result<(), String> {
-    pyo3::prepare_freethreaded_python();
-    create_blank_project(&name).map_err(|e| format!("Error creating QGIS project: {:?}", e))?;
-
-    println!("project created");
-
     app_handle
         .emit_all("progress-update", "Recherche des fichiers")
         .map_err(|e| format!("Error emitting progress update: {:?}", e))?;
@@ -46,6 +42,18 @@ async fn open_new_project(
     download_shp_files(&urls, &code).await?;
 
     println!("files downloaded");
+
+    app_handle
+        .emit_all("progress-update", "Initialisation du projet")
+        .map_err(|e| format!("Error emitting progress update: {:?}", e))?;
+
+    pyo3::prepare_freethreaded_python();
+
+    initialize_qgis_app_path().map_err(|e| format!("Error initializing QGIS app path: {:?}", e))?;
+
+    create_blank_project(&name).map_err(|e| format!("Error creating QGIS project: {:?}", e))?;
+
+    println!("project created");
 
     app_handle
         .emit_all("progress-update", "Preparation des Couches")
@@ -73,13 +81,31 @@ fn get_dpts_list() -> HashMap<String, String> {
     return get_departement_list();
 }
 
+#[tauri::command]
+fn get_projects() -> HashMap<String, Vec<String>> {
+    match get_previous_projects() {
+        Ok(projects) => projects,
+        Err(_) => HashMap::new(),
+    }
+}
+
+#[tauri::command]
+fn get_os() -> String {
+    return utils::get_operating_system().to_string();
+}
+
 //---------------------------------------------------------main---------------------------------------------------------
 
 fn main() {
     setup_check().expect("Setup check failed");
 
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![open_new_project, get_dpts_list])
+        .invoke_handler(tauri::generate_handler![
+            open_new_project,
+            get_dpts_list,
+            get_projects,
+            get_os
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -115,6 +141,12 @@ async fn get_shp_file_urls(code: &str) -> Result<Vec<String>, String> {
 /// - Result<(), String> : An empty result or an error message.
 async fn download_shp_files(urls: &[String], code: &str) -> Result<(), String> {
     println!("downloading shp files");
+    if Path::new(format!("tmp/BDTOPO_{}.7z", code).as_str()).exists()
+        && Path::new(format!("tmp/BDFORET_{}.7z", code).as_str()).exists()
+    {
+        return Ok(());
+    }
+
     for url in urls {
         download_shp_file(url, code)
             .await
@@ -135,6 +167,7 @@ async fn download_shp_files(urls: &[String], code: &str) -> Result<(), String> {
 fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
     println!("preparing layers");
     println!("name: {}", name);
+
     layer_full_extraction(
         "BDFORET",
         code,
@@ -147,7 +180,7 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
     println!("layer1 extracted");
 
     load_vector_layer_to_project(
-        name,
+        &format!("resources/QGIS/{}/{}.qgz", name, name),
         &format!(
             "resources/QGIS/{}/Vegetation/FORMATION_VEGETALE/FORMATION_VEGETALE.shp",
             name
@@ -158,7 +191,7 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
 
     println!("layer1 loaded");
 
-    let _ = setup_basic_veg_layer(name, "BDFORET");
+    let _ = setup_basic_veg_layer(&format!("resources/QGIS/{}/{}.qgz", name, name), "BDFORET");
 
     println!("veg layer setup");
 
@@ -170,11 +203,10 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
         "PLAN_D_EAU",
         "COURS_D_EAU",
         "ZONE_D_HABITATION",
-        "ZONE_D_ACTIVITE_OU_D_INTERET",
         "TRONCON_DE_ROUTE",
         "TRONCON_DE_VOIE_FERREE",
         "PISTE_D_AERODROME",
-        "ITINERAIRE_AUTRE",
+        "ZONE_D_ESTRAN",
         "EQUIPEMENT_DE_TRANSPORT",
         "AERODROME",
     ];
@@ -192,7 +224,7 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
         println!("layer {} extracted", layer);
 
         load_vector_layer_to_project(
-            name,
+            &format!("resources/QGIS/{}/{}.qgz", name, name),
             &format!(
                 "resources/QGIS/{}/Topographie/{}/{}.shp",
                 name, layer, layer
@@ -203,7 +235,7 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
 
         println!("layer {} loaded", layer);
 
-        let _ = setup_basic_topo_layer(name, layer);
+        let _ = setup_basic_topo_layer(&format!("resources/QGIS/{}/{}.qgz", name, name), layer);
 
         println!("topo layer {} setup", layer);
     }

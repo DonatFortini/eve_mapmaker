@@ -1,19 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
-import HomeScreenSidebar from "@/components/HomeScreenSidebar";
-import HomeScreenMainContent from "@/components/HomeScreenMainContent";
+import HomeScreenSidebar from "@/components/HomeScreen/HomeScreenSidebar";
+import HomeScreenMainContent from "@/components/HomeScreen/HomeScreenMainContent";
 import { RecentMap } from "@/components/types/map";
 
 interface HomeScreenProps {
   onNewProject: () => void;
-  onMainScreen: () => void;
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({
-  onNewProject,
-  onMainScreen,
-}) => {
+const HomeScreen: React.FC<HomeScreenProps> = ({ onNewProject }) => {
   const [recentMaps, setRecentMaps] = useState<RecentMap[]>([]);
 
   useEffect(() => {
@@ -44,10 +40,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({
 
   return (
     <div className="flex h-screen w-screen bg-[#2D2D30] text-[#CCCCCC]">
-      <HomeScreenSidebar
-        onNewProject={onNewProject}
-        onMainScreen={onMainScreen}
-      />
+      <HomeScreenSidebar onNewProject={onNewProject} />
       <HomeScreenMainContent recentMaps={recentMaps} />
     </div>
   );

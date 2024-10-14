@@ -1,15 +1,31 @@
 import { FolderPlus, Book, Settings, FolderInput } from "lucide-react";
 import { open as openLink } from "@tauri-apps/api/shell";
 import { Button } from "@/components/ui/button";
+import { open } from "@tauri-apps/api/dialog";
+import { invoke } from "@tauri-apps/api/tauri";
 
 interface HomeScreenSidebarProps {
   onNewProject: () => void;
-  onMainScreen: () => void;
+}
+
+async function openDialog() {
+  const os: string = await invoke("get_os");
+  const userDir: string = os === "windows" ? "C:\\" : "/home";
+
+  const selected = await open({
+    multiple: false,
+    directory: true,
+    defaultPath: userDir,
+  });
+
+  if (selected) {
+    //TODO : implement load_project
+    //invoke("load_project", { path: selected });
+  }
 }
 
 const HomeScreenSidebar: React.FC<HomeScreenSidebarProps> = ({
   onNewProject,
-  onMainScreen,
 }) => (
   <div className="bg-[#252526] p-4 flex flex-col w-80 transition-all duration-300 ease-in-out">
     <div className="mb-8">
@@ -19,7 +35,7 @@ const HomeScreenSidebar: React.FC<HomeScreenSidebarProps> = ({
     </div>
     <div className="flex flex-col">
       <HomeScreenSidebarButton
-        onClick={onMainScreen}
+        onClick={openDialog}
         icon={<FolderInput className="mr-2 h-6 w-6" />}
         text="Charger un projet"
       />

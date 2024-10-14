@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import "./App.css";
-import HomeScreen from "@/components/HomeScreen";
+import HomeScreen from "@/components/HomeScreen/HomeScreen";
 import MainScreen from "@/components/MainScreen";
 import CreationLoaderScreen from "@/components/CreationLoaderScreen";
 import NewProjectScreen from "@/components/NewProjectScreen";

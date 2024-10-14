@@ -417,3 +417,35 @@ pub fn layer_full_extraction(
 
     Ok(())
 }
+
+/// get the list of previous projects
+///
+/// # Returns
+/// - A hashmap of the previous projects
+/// String: the name of the project
+/// Vec![String]: the path to the preview image and the path to the project file
+pub fn get_previous_projects() -> Result<HashMap<String, Vec<String>>, Box<dyn Error>> {
+    #[cfg(target_os = "windows")]
+    let output = Command::new("cmd")
+        .args(&["/C", "dir", "resources\\QGIS\\", "/b", "/a:d"])
+        .output()?;
+    #[cfg(not(target_os = "windows"))]
+    let output = Command::new("ls").args(&["resources/QGIS/"]).output()?;
+    let output_str = String::from_utf8_lossy(&output.stdout);
+    let mut projects = HashMap::new();
+    for line in output_str.lines() {
+        let project_name = line.trim();
+        let project_path = format!("resources/QGIS/{}/", project_name);
+        let preview_image_path = format!("{}preview.png", project_path);
+        let project_file_path = format!("{}{}.qgs", project_path, project_name);
+        projects.insert(
+            project_name.to_string(),
+            vec![preview_image_path, project_file_path],
+        );
+    }
+    Ok(projects)
+}
+
+pub fn get_operating_system() -> &'static str {
+    return std::env::consts::OS;
+}

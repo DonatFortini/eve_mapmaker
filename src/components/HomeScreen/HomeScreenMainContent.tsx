@@ -1,5 +1,5 @@
 // HomeScreenMainContent.tsx
-import MapPreview from "@/components/HomeScreenMapPreview";
+import MapPreview from "@/components/HomeScreen/HomeScreenMapPreview";
 import { RecentMap } from "@/components/types/map";
 
 interface HomeScreenMainContentProps {

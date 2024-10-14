@@ -6,9 +6,9 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { listen } from "@tauri-apps/api/event";
 
 const steps = [
-  "Mise en Place",
   "Recherche des fichiers",
   "Téléchargement des données",
+  "Initialisation du projet",
   "Preparation des Couches",
   "Finalisation",
 ];
@@ -22,7 +22,7 @@ export default function CreationLoaderScreen({
   department,
   projectName,
 }: CreationLoaderScreenProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(-1);
   const [error, setError] = useState<string | null>(null);
   const isInitialMount = useRef(true);
 
