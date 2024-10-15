@@ -235,7 +235,11 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
 
         println!("layer {} loaded", layer);
 
-        let _ = setup_basic_topo_layer(&format!("resources/QGIS/{}/{}.qgz", name, name), layer);
+        let _ = setup_basic_topo_layer(
+            &format!("resources/QGIS/{}/{}.qgz", name, name),
+            layer,
+            "BDTOPO",
+        );
 
         println!("topo layer {} setup", layer);
     }

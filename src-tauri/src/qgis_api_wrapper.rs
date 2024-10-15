@@ -158,7 +158,7 @@ project.write(project.fileName())
     })
 }
 
-// TODO :  add all layers in a single group and make the group on top and zoom on it
+// TODO: Add all layers in a single group, create the group on top, and zoom on it.
 
 #[pyfunction]
 /// Use the QGIS API to apply the basic setup needed for a topography layer.
@@ -167,44 +167,85 @@ project.write(project.fileName())
 /// # Parameters
 /// - `project_name`: A string slice that holds the name of the project.
 /// - `layer_name`: A string slice that holds the name of the layer.
+/// - `parent_layer`: A string slice that holds the name of the parent layer group.
 ///
 /// # Returns
 /// - py Error or Result.
-pub fn setup_basic_topo_layer(project_name: &str, layer_name: &str) -> PyResult<String> {
+pub fn setup_basic_topo_layer(
+    project_name: &str,
+    layer_name: &str,
+    parent_layer: &str,
+) -> PyResult<String> {
     let code = format!(
         r#"
-from qgis.core import QgsProject, QgsSimpleLineSymbolLayer, QgsSimpleFillSymbolLayer, QgsSymbol
+from qgis.core import QgsProject, QgsSimpleLineSymbolLayer, QgsSimpleFillSymbolLayer, QgsSymbol, QgsLayerTreeGroup
 from qgis.PyQt.QtGui import QColor
+from qgis.utils import iface
 
 project = QgsProject.instance()
 project.read("{project_name}")
 layer = project.mapLayersByName("{layer_name}")
 if not layer:
-    raise Exception("Layer not found")
+    raise Exception(f"Layer '{layer_name}' not found in the project '{project_name}'")
 layer = layer[0]
 
-if layer_name in ["COURS_D_EAU", "TRONCON_DE_ROUTE", "TRONCON_DE_VOIE_FEREE"]:
-    symbol = QgsSymbol.defaultSymbol(layer.geometryType())
-    symbol.deleteSymbolLayer(0)
-    symbol.appendSymbolLayer(QgsSimpleLineSymbolLayer.create({{'color': '0,0,0,255', 'width': '0.26'}}))
-else:
-    symbol = QgsSymbol.defaultSymbol(layer.geometryType())
-    symbol.deleteSymbolLayer(0)
-    symbol.appendSymbolLayer(QgsSimpleFillSymbolLayer.create({{'color': '0,0,0,255', 'outline_style': 'no'}}))
+# Check if the parent layer group exists, if not, create it
+root = project.layerTreeRoot()
+parent_group = root.findGroup("{parent_layer}")
+if not parent_group:
+    print(f"Parent layer group '{parent_layer}' not found, creating it.")
+    parent_group = root.insertGroup(0, "{parent_layer}")
 
-layer.renderer().setSymbol(symbol)
-layer.triggerRepaint()
+# Add the layer to the parent group
+if not parent_group.findLayer(layer.id()):
+    parent_group.addLayer(layer)
+    print(f"Layer '{layer_name}' added to the group '{parent_layer}'.")
+
+# Apply the basic styling to the layer
+try:
+    if layer_name in ["COURS_D_EAU", "TRONCON_DE_ROUTE", "TRONCON_DE_VOIE_FEREE"]:
+        symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+        symbol.deleteSymbolLayer(0)
+        symbol_layer = QgsSimpleLineSymbolLayer.create({{'color': '0,0,0,255', 'width': '0.26'}})
+        if symbol_layer:
+            symbol.appendSymbolLayer(symbol_layer)
+        else:
+            raise Exception("Failed to create line symbol layer")
+    else:
+        symbol = QgsSymbol.defaultSymbol(layer.geometryType())
+        symbol.deleteSymbolLayer(0)
+        symbol_layer = QgsSimpleFillSymbolLayer.create({{'color': '0,0,0,255', 'outline_style': 'no'}})
+        if symbol_layer:
+            symbol.appendSymbolLayer(symbol_layer)
+        else:
+            raise Exception("Failed to create fill symbol layer")
+
+    # Apply the symbol to the layer's renderer and refresh the layer
+    layer.renderer().setSymbol(symbol)
+    layer.triggerRepaint()
+    print(f"Styling applied to the layer '{layer_name}'.")
+except Exception as e:
+    raise Exception(f"Error applying styling to layer '{layer_name}': {{str(e)}}")
+
+# Zoom to the extent of the added layer
+extent = layer.extent()
+iface.mapCanvas().setExtent(extent)
+iface.mapCanvas().refresh()
+print(f"Zoomed to the extent of the layer '{layer_name}'.")
+
+# Save the project after changes
 project.write(project.fileName())
 "#,
         project_name = project_name,
-        layer_name = layer_name
+        layer_name = layer_name,
+        parent_layer = parent_layer
     );
 
     Python::with_gil(|py| {
         py.run_bound(&code, None, None)?;
         Ok(format!(
-            "Layer {} in project {} categorized successfully",
-            layer_name, project_name
+            "Layer '{}' in project '{}' categorized and added to group '{}' successfully.",
+            layer_name, project_name, parent_layer
         ))
     })
 }
