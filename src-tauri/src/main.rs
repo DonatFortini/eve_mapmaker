@@ -165,9 +165,6 @@ async fn download_shp_files(urls: &[String], code: &str) -> Result<(), String> {
 /// # Returns
 /// - Result<(), String> : An empty result or an error message.
 fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
-    println!("preparing layers");
-    println!("name: {}", name);
-
     create_tree_group(&format!("resources/QGIS/{}/{}.qgz", name, name))
         .map_err(|e| format!("Error creating tree group: {:?}", e))?;
 
@@ -180,8 +177,6 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
     )
     .map_err(|e| format!("Error extracting layer1: {:?}", e))?;
 
-    println!("layer1 extracted");
-
     load_vector_layer_to_project(
         &format!("resources/QGIS/{}/{}.qgz", name, name),
         &format!(
@@ -192,11 +187,9 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
     )
     .map_err(|e| format!("Error loading layer to project: {:?}", e))?;
 
-    println!("layer1 loaded");
+    //TODO : add parcelles layer and search for sea layer
 
     let _ = setup_basic_veg_layer(&format!("resources/QGIS/{}/{}.qgz", name, name), "BDFORET");
-
-    println!("veg layer setup");
 
     let topo_layers = [
         "TERRAIN_DE_SPORT",
@@ -215,7 +208,6 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
     ];
 
     for layer in topo_layers.iter() {
-        // Extract Layer
         match layer_full_extraction(
             "BDTOPO",
             code,
@@ -226,11 +218,10 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
             Ok(_) => println!("Layer '{}' extracted successfully.", layer),
             Err(e) => {
                 println!("Error extracting layer '{}': {:?}", layer, e);
-                continue; // Skip to the next layer if extraction fails
+                continue;
             }
         }
 
-        // Load Layer
         match load_vector_layer_to_project(
             &format!("resources/QGIS/{}/{}.qgz", name, name),
             &format!(
@@ -242,16 +233,17 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
             Ok(_) => println!("Layer '{}' loaded successfully.", layer),
             Err(e) => {
                 println!("Error loading layer '{}': {:?}", layer, e);
-                continue; // Skip to the next layer if loading fails
+                continue;
             }
         }
 
-        // Setup Layer
         match setup_basic_topo_layer(&format!("resources/QGIS/{}/{}.qgz", name, name), layer) {
             Ok(_) => println!("Layer '{}' setup successfully.", layer),
             Err(e) => println!("Error setting up layer '{}': {:?}", layer, e),
         }
     }
+
+    //TODO : add the satellite layer
 
     Ok(())
 }
