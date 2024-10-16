@@ -168,6 +168,9 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
     println!("preparing layers");
     println!("name: {}", name);
 
+    create_tree_group(&format!("resources/QGIS/{}/{}.qgz", name, name))
+        .map_err(|e| format!("Error creating tree group: {:?}", e))?;
+
     layer_full_extraction(
         "BDFORET",
         code,
@@ -212,36 +215,42 @@ fn prepare_layers(name: &str, code: &str) -> Result<(), String> {
     ];
 
     for layer in topo_layers.iter() {
-        layer_full_extraction(
+        // Extract Layer
+        match layer_full_extraction(
             "BDTOPO",
             code,
             layer,
             &format!("{}/Topographie", name),
             Some(layer),
-        )
-        .map_err(|e| format!("Error extracting layer1: {:?}", e))?;
+        ) {
+            Ok(_) => println!("Layer '{}' extracted successfully.", layer),
+            Err(e) => {
+                println!("Error extracting layer '{}': {:?}", layer, e);
+                continue; // Skip to the next layer if extraction fails
+            }
+        }
 
-        println!("layer {} extracted", layer);
-
-        load_vector_layer_to_project(
+        // Load Layer
+        match load_vector_layer_to_project(
             &format!("resources/QGIS/{}/{}.qgz", name, name),
             &format!(
                 "resources/QGIS/{}/Topographie/{}/{}.shp",
                 name, layer, layer
             ),
             layer,
-        )
-        .map_err(|e| format!("Error loading layer to project: {:?}", e))?;
+        ) {
+            Ok(_) => println!("Layer '{}' loaded successfully.", layer),
+            Err(e) => {
+                println!("Error loading layer '{}': {:?}", layer, e);
+                continue; // Skip to the next layer if loading fails
+            }
+        }
 
-        println!("layer {} loaded", layer);
-
-        let _ = setup_basic_topo_layer(
-            &format!("resources/QGIS/{}/{}.qgz", name, name),
-            layer,
-            "BDTOPO",
-        );
-
-        println!("topo layer {} setup", layer);
+        // Setup Layer
+        match setup_basic_topo_layer(&format!("resources/QGIS/{}/{}.qgz", name, name), layer) {
+            Ok(_) => println!("Layer '{}' setup successfully.", layer),
+            Err(e) => println!("Error setting up layer '{}': {:?}", layer, e),
+        }
     }
 
     Ok(())
